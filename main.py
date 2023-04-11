@@ -1,110 +1,72 @@
 import sys
-import pygame
-from pygame.locals import *
-import player
-from tweener import *
+import pygame as pg
+import tweener as tw
 
-pygame.init()
-vec = pygame.math.Vector2  # 2 for two dimensional
-
-WIDTH = 1024
-HEIGHT = 768
-ACC = 0.5
-FRIC = -0.12
+WIN_SIZE = WIDTH, HEIGHT = 1024, 768
 FPS = 60
 
-FramePerSec = pygame.time.Clock()
+ORIGIN_X, ORIGIN_Y = 3, 0
+WORLD_WIDTH, WORLD_HEIGHT = 8, 8
 
-displaysurface = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Evo Chamber")
- 
-class platform(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__()
-        self.surf = pygame.Surface((WIDTH, 20))
-        self.surf.fill((255,0,0))
-        self.rect = self.surf.get_rect(center = (WIDTH/2, HEIGHT - 10)) 
+pg.init()
+screen = pg.display.set_mode(size=WIN_SIZE)
+clock = pg.time.Clock()
 
-PT1 = platform()
-P1 = player.Player()
+font = pg.font.SysFont("Arial", 32)
+tile = pg.image.load('tile.png')
+tileMask = pg.image.load('tile-mask.png')
+tileSelected = pg.image.load('tile-selected.png')
+tileW, tileH = tile.get_size()
+dt = 0
+cx, cy = 0, 0
+selected = -1, -1
+tx, ty = 0, 0
 
-image = pygame.image.load('test.png')
-font = pygame.font.Font('Roboto-Medium.ttf', 30)
-text = font.render('Hello world', True, (0, 255, 0), (0, 0, 128))
+def update():
+    dt = clock.tick(FPS)
+    pg.display.set_caption(f"FPS: {clock.get_fps():.2f}")
 
-rect = pygame.Surface((100, 100))
-rc = rect.get_rect()
-rc.topleft = (100, 100)
-rect.fill((255, 255, 255))
+def draw():
+    screen.fill((0, 0, 0))
 
-textRect = text.get_rect()
-textRect.bottomright = (WIDTH, HEIGHT)
-# textRect.topleft = (WIDTH - textRect.width, HEIGHT - textRect.height)
+    for y in range(WORLD_HEIGHT):
+        for x in range(WORLD_WIDTH):            
+            wx, wy = tileW / 2 * (x - y), tileH / 2 * (x + y)
+            if x == selected[0] and y == selected[1]:
+                screen.blit(tileSelected, (wx + ORIGIN_X * tileW, wy + ORIGIN_Y * tileH))
+            else:
+                screen.blit(tile, (wx + ORIGIN_X * tileW, wy + ORIGIN_Y * tileH))    
 
-all_sprites = pygame.sprite.Group()
-all_sprites.add(PT1)
-all_sprites.add(P1)
+    # rc = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+    text = font.render("{x} {y}".format(x = tx, y = ty), False, (255, 255, 255))
+    screen.blit(text, (0, 0))
+    # screen.blit(tileSelected, (cx * tileW, cy * tileH))
+    # pg.draw.rect(screen, (255, 0, 0), (cx * tileW, cy * tileH, tileW, tileH), 1)    
 
-alpha = {"alpha": 0}
-
-# hero_tween = tween.to(rc, "x", 400, 5, "easeInOutQuad")
-# hero_tween.on_complete.add(lambda: print("Tween complete!"))
-
-anim = Tween(begin=100, end=400, duration=1000, easing=Easing.BOUNCE,
-               easing_mode=EasingMode.OUT,
-               boomerang=True, 
-               loop=True)
-anim.start()
-# fadeout = tween.to(alpha, "alpha", 255, 1, "easeInOutQuad")
-
-transition = pygame.Surface((WIDTH, HEIGHT))
-
-angle = 0
 while True:
-    pos = pygame.mouse.get_pos()
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
+    for event in pg.event.get():
+        if event.type == pg.QUIT:
+            pg.quit()
             sys.exit()
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                pygame.quit()
+        elif event.type == pg.KEYDOWN:
+            if event.key == pg.K_ESCAPE:
+                pg.quit()
                 sys.exit()
-        elif event.type == pygame.MOUSEBUTTONDOWN:            
-            if rc.collidepoint(pos):
-                if event.button == 1:
-                    print("Left MOUSEBUTTONDOWN at ({0}, {1})".format(pos[0], pos[1]))
-                if event.button == 3:
-                    print("Right MOUSEBUTTONDOWN at ({0}, {1})".format(pos[0], pos[1]))
-        elif event.type == pygame.MOUSEBUTTONUP:
-            if rc.collidepoint(pos):
-                if event.button == 1:
-                    print("Left MOUSEBUTTONUP at ({0}, {1})".format(pos[0], pos[1]))
-                if event.button == 3:
-                    print("Right MOUSEBUTTONUP at ({0}, {1})".format(pos[0], pos[1]))
-
-    displaysurface.fill((0,0,0))
- 
-    for entity in all_sprites:
-        displaysurface.blit(entity.surf, entity.rect)
-
-    scaled_image = pygame.transform.scale(image, (100, 100))
-    rotated_image = pygame.transform.rotate(scaled_image, angle)    
-    angle += 1
-    displaysurface.blit(rotated_image, ((WIDTH - rotated_image.get_width()) / 2, (HEIGHT - rotated_image.get_height()) / 2))
-    displaysurface.blit(text, textRect)    
-    
-    anim.update()
-    rc.x = anim.value
-    displaysurface.blit(rect, rc) 
-    
-    pygame.draw.line(displaysurface, (255, 255, 255), (0, 0), (WIDTH, HEIGHT), 1)
-
-    # pygame.draw.rect(transition, (255, 0, 0), (0, 0, WIDTH, HEIGHT))
-    # transition.set_alpha(alpha.get("alpha"))
-    # displaysurface.blit(transition, (0, 0))
-
-    pygame.display.update()
-    dt = FramePerSec.tick(FPS) / 1000
-
-    # tween.update(dt)        
+        elif event.type == pg.MOUSEMOTION:
+            x, y = event.pos
+            cx, cy = x // tileW, y // tileH
+            tx, ty = x % tileW, y % tileH
+            maskColor = tileMask.get_at((tx, ty))
+            selected = (cx - ORIGIN_X) + (cy - ORIGIN_Y), (cy - ORIGIN_Y) - (cx - ORIGIN_X)
+            if (maskColor == (255, 0, 0, 255)):
+                 selected = selected[0] - 1, selected[1]
+            elif (maskColor == (0, 255, 0, 255)):
+                selected = selected[0], selected[1] - 1
+            elif (maskColor == (0, 0, 255, 255)):
+                selected = selected[0], selected[1] + 1
+            elif (maskColor == (255, 255, 0, 255)):
+                selected = selected[0] + 1, selected[1]
+           
+    update()
+    draw()
+    pg.display.flip()
