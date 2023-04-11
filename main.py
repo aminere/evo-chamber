@@ -7,8 +7,7 @@ import math
 WIN_SIZE = WIDTH, HEIGHT = 1024, 768
 FPS = 60
 
-ORIGIN_X, ORIGIN_Y = 447, 122
-WORLD_WIDTH, WORLD_HEIGHT = 64, 64
+WORLD_WIDTH, WORLD_HEIGHT = 12, 12
 SCROLL_SPEED = 10
 SCROLL_MARGIN = 100
 
@@ -27,15 +26,14 @@ selected = -1, -1
 tx, ty = 0, 0
 
 cameraPos = (0, 0)
-tiles = pg.Surface((WORLD_WIDTH * tileW, WORLD_HEIGHT * tileH))
 
-# worldToScreen = [
-#     [tileW / 2, -tileW / 2],
-#     [tileH / 4, tileH / 4]
-# ]
-# screenToWorld = np.linalg.inv(worldToScreen)
+worldSize = WORLD_WIDTH * tileW, WORLD_HEIGHT * tileH
+tiles = pg.Surface(worldSize)
+
+ORIGIN_X, ORIGIN_Y = (WORLD_WIDTH - 1) * tileW // 2, 0
 
 # generate map
+tiles.fill((35, 35, 35))
 for y in range(WORLD_HEIGHT):
         for x in range(WORLD_WIDTH):
             sx, sy = tileW / 2 * (x - y), tileH / 2 * (x + y)
@@ -51,12 +49,13 @@ def draw():
 
     screen.blit(tiles, cameraPos)
 
-    x, y = selected
-    sx, sy = tileW / 2 * (x - y), tileH / 2 * (x + y)
-    screen.blit(tileSelected, (sx + ORIGIN_X + cameraPos[0], sy + ORIGIN_Y + cameraPos[1]))
+    x, y = selected    
+    if (x >= 0 and y >= 0 and x < WORLD_WIDTH and y < WORLD_HEIGHT):
+        sx, sy = tileW / 2 * (x - y), tileH / 2 * (x + y)
+        screen.blit(tileSelected, (sx + ORIGIN_X + cameraPos[0], sy + ORIGIN_Y + cameraPos[1]))
 
     # rc = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
-    text = font.render("{x} {y}".format(x = cameraPos[0], y = cameraPos[1]), False, (255, 255, 255))
+    text = font.render("{x} {y}".format(x = x, y = y), False, (255, 255, 255))
     screen.blit(text, (0, 0))
     # pg.draw.rect(screen, (255, 0, 0), (cx * tileW, cy * tileH, tileW, tileH), 1)    
 
@@ -74,13 +73,17 @@ while True:
 
     mouseX, mouseY = pg.mouse.get_pos()
     if (mouseX > WIDTH - SCROLL_MARGIN):
-        cameraPos = (cameraPos[0] - SCROLL_SPEED, cameraPos[1])
+        cameraPos = (cameraPos[0] - SCROLL_SPEED, cameraPos[1])        
+        cameraPos = (max(cameraPos[0], WIDTH - tiles.get_width()), cameraPos[1])
     elif (mouseX < SCROLL_MARGIN):
         cameraPos = (cameraPos[0] + SCROLL_SPEED, cameraPos[1])
+        cameraPos = (min(cameraPos[0], 0), cameraPos[1])
     if (mouseY > HEIGHT - SCROLL_MARGIN):
         cameraPos = (cameraPos[0], cameraPos[1] - SCROLL_SPEED)
+        cameraPos = (cameraPos[0], max(cameraPos[1], HEIGHT - tiles.get_height()))
     elif (mouseY < SCROLL_MARGIN):
-        cameraPos = (cameraPos[0], cameraPos[1] + SCROLL_SPEED)
+        cameraPos = (cameraPos[0], cameraPos[1] + SCROLL_SPEED)    
+        cameraPos = (cameraPos[0], min(cameraPos[1], 0))
 
     for event in pg.event.get():
         if event.type == pg.QUIT:
@@ -96,14 +99,7 @@ while True:
             cx, cy = lx // tileW, ly // tileH
             tx, ty = lx % tileW, ly % tileH
             maskColor = tileMask.get_at((tx, ty))
-            selected = cx + cy, cy - cx
-
-            # matrix = np.array([
-            #     [tileW / 2, -tileW / 2],
-            #     [tileH / 2, tileH / 2]
-            # ])                    
-            # fselected = np.dot(screenToWorld, (x, y))
-            # selected = int(fselected[0]), int(fselected[1])
+            selected = cx + cy, cy - cx            
 
             if (maskColor == (255, 0, 0, 255)):
                  selected = selected[0] - 1, selected[1]
