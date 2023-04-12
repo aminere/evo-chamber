@@ -16,7 +16,7 @@ screen = pg.display.set_mode(size=WIN_SIZE)
 clock = pg.time.Clock()
 
 font = pg.font.SysFont("Arial", 32)
-tile = pg.image.load('tile.png')
+tile = pg.image.load('tile2.png')
 tileMask = pg.image.load('tile-mask.png')
 tileSelected = pg.image.load('tile-selected.png')
 tileW, tileH = tile.get_size()
@@ -27,17 +27,22 @@ tx, ty = 0, 0
 
 cameraPos = (0, 0)
 
-worldSize = WORLD_WIDTH * tileW, WORLD_HEIGHT * tileH
+worldSize = WORLD_WIDTH * tileW, (WORLD_HEIGHT + 1) * tileH / 2
 tiles = pg.Surface(worldSize)
 
 ORIGIN_X, ORIGIN_Y = (WORLD_WIDTH - 1) * tileW // 2, 0
+# ORIGIN_X, ORIGIN_Y = 0, 0
+
+def worldToScreen(x, y):
+    return tileW / 2 * (x - y), tileH / 4 * (x + y)
 
 # generate map
 tiles.fill((35, 35, 35))
 for y in range(WORLD_HEIGHT):
         for x in range(WORLD_WIDTH):
-            sx, sy = tileW / 2 * (x - y), tileH / 2 * (x + y)
+            # sx, sy = tileW / 2 * (x - y), tileH / 2 * (x + y)
             # sx, sy = np.dot(worldToScreen, (x, y))
+            sx, sy = worldToScreen(x, y)
             tiles.blit(tile, (sx + ORIGIN_X, sy + ORIGIN_Y))             
 
 def update():
@@ -51,13 +56,14 @@ def draw():
 
     x, y = selected    
     if (x >= 0 and y >= 0 and x < WORLD_WIDTH and y < WORLD_HEIGHT):
-        sx, sy = tileW / 2 * (x - y), tileH / 2 * (x + y)
+        # sx, sy = tileW / 2 * (x - y), tileH / 2 * (x + y)
+        sx, sy = worldToScreen(x, y)
         screen.blit(tileSelected, (sx + ORIGIN_X + cameraPos[0], sy + ORIGIN_Y + cameraPos[1]))
 
     # rc = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
-    text = font.render("{x} {y}".format(x = x, y = y), False, (255, 255, 255))
+    text = font.render("{x} {y}".format(x = x, y = y), False, (255, 0, 0))
     screen.blit(text, (0, 0))
-    # pg.draw.rect(screen, (255, 0, 0), (cx * tileW, cy * tileH, tileW, tileH), 1)    
+    # pg.draw.rect(screen, (255, 0, 0), (cx * tileW, cy * tileH / 2, tileW, tileH / 2), 1)    
 
 while True:
 
@@ -96,8 +102,8 @@ while True:
         elif event.type == pg.MOUSEMOTION:
             x, y = event.pos
             lx, ly = x - ORIGIN_X - cameraPos[0], y - ORIGIN_Y - cameraPos[1]
-            cx, cy = lx // tileW, ly // tileH
-            tx, ty = lx % tileW, ly % tileH
+            cx, cy = lx // tileW, ly // (tileH // 2)
+            tx, ty = lx % tileW, ly % (tileH // 2)
             maskColor = tileMask.get_at((tx, ty))
             selected = cx + cy, cy - cx            
 
