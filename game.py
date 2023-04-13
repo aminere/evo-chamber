@@ -24,6 +24,7 @@ class Game:
 
         self.tileMask = pg.image.load('images/tile-mask.png')
         self.tileSelected = pg.image.load('images/tile-selected.png')
+        self.tileSelectedRed = pg.image.load('images/tile-selected-red.png')
 
         self.tilesSurface = pg.Surface(config.mapSize)
         self.tiles = list(itertools.repeat(0, config.worldSize[0] * config.worldSize[1]))
@@ -33,6 +34,8 @@ class Game:
 
         self.ui = ui.UI()
         self.action = None
+        self.coins = config.coins
+        self.updateCoins(0)
 
         # generate map
         self.tilesSurface.fill(config.bgColor)
@@ -70,18 +73,19 @@ class Game:
 
     def draw(self):        
         self.screen.fill(config.bgColor)
-        self.screen.blit(self.tilesSurface, self.cameraPos)       
+        self.screen.blit(self.tilesSurface, self.cameraPos)
 
         if (self.ui.hoveredButton == None):
-            x, y = self.selected
-            if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):
-                sx, sy = utils.worldToScreen(self.selected)
-                self.screen.blit(self.tileSelected, (sx + self.cameraPos[0], sy + self.cameraPos[1]))
+            if (self.action != None):
+                x, y = self.selected
+                if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):
+                    sx, sy = utils.worldToScreen(self.selected)
+                    self.screen.blit(self.tileSelected, (sx + self.cameraPos[0], sy + self.cameraPos[1]))
 
         # self.farmer.draw(self.screen)
         self.ui.draw(self.screen)
 
-    def onMouseMoved(self, x, y):        
+    def onMouseMoved(self, x, y):
 
         # tile selection
         self.selected, tx, ty = utils.screenToWorld((x, y), self.cameraPos)        
@@ -99,8 +103,10 @@ class Game:
         if (button == pg.BUTTON_LEFT):
 
             if (self.ui.pressedButton != None):
-                self.action = self.ui.pressedButton.action
-                print(self.action)
+                if (self.action == self.ui.pressedButton.action):
+                    self.action = None
+                else: 
+                    self.action = self.ui.pressedButton.action
                 self.ui.pressedButton = None
                 for button in self.ui.buttons:
                     button.selected = button.action == self.action
@@ -109,18 +115,39 @@ class Game:
             if (self.ui.hoveredButton != None):
                 return
 
-            # toggle tiles
-            x, y = self.selected
-            if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):
-                # self.farmer.moveTo(self.selected)
-                index = y * config.worldSize[0] + x
-                self.tiles[index] = (self.tiles[index] + 1) % len(tileSprites)
-                startY = max(0, y - 1)
-                for _y in range(config.worldSize[1] - startY):
-                    for _x in range(config.worldSize[0]):
-                        yCoord = startY + _y
-                        index = yCoord * config.worldSize[0] + _x
-                        sprite = tileSprites[self.tiles[index]]                        
-                        sx, sy = utils.worldToScreen((_x, yCoord))
-                        self.tilesSurface.blit(sprite, (sx, sy))
+            if (self.action != None):
+                x, y = self.selected
+                if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):
+                    index = y * config.worldSize[0] + x
+                    if (self.action == 'plough'):
+                        self.tiles[index] = (self.tiles[index] + 1) % len(tileSprites)
+                        self.updateCoins(-config.ploughCost)
+                    self.redrawTiles(y)
+
+
+    def tryUpdateButton(self, button, action, cost):
+        updated = False
+        if (button.action == action):
+            updated = True
+            button.disabled = self.coins < cost
+            if (button.disabled and self.action == action):
+                self.action = None
+        return updated
+
+    def updateCoins(self, amount):
+        self.coins += amount
+        for button in self.ui.buttons:
+            if not self.tryUpdateButton(button, 'plough', config.ploughCost):
+                if not self.tryUpdateButton(button, 'plant', config.plantCost):
+                    self.tryUpdateButton(button, 'water', config.waterCost)            
+                    
+    def redrawTiles(self, y):
+        startY = max(0, y - 1)
+        for _y in range(config.worldSize[1] - startY):
+            for _x in range(config.worldSize[0]):
+                yCoord = startY + _y
+                index = yCoord * config.worldSize[0] + _x
+                sprite = tileSprites[self.tiles[index]]                        
+                sx, sy = utils.worldToScreen((_x, yCoord))
+                self.tilesSurface.blit(sprite, (sx, sy))
 

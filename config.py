@@ -14,3 +14,8 @@ scrollMargin = 100
 uiBgColor = (17, 17, 17)
 uiPadding = 10
 uiGap = 10
+
+coins = 2
+ploughCost = 1
+plantCost = 2
+waterCost = 5

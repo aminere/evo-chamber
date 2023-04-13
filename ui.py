@@ -2,6 +2,7 @@
 import pygame as pg
 import config
 import button
+import singletons
 
 class UI:
     def __init__(self):
@@ -36,15 +37,19 @@ class UI:
         mousPos = pg.mouse.get_pos()
         hoveredButton = None
         for button in self.buttons:
-            if (button.rect.collidepoint(mousPos)):
+            if (button.disabled):
+                button.hovered = False
+                button.pressed = False
+            elif (button.rect.collidepoint(mousPos)):
                 button.hovered = True
                 hoveredButton = button
                 button.pressed = leftPressed
-                if (leftPressed):
+                if (leftPressed and not button.disabled):
                     self.pressedButton = button
             else:   
                 button.hovered = False
                 button.pressed = False
+                
         self.hoveredButton = hoveredButton
 
     def draw(self, screen):        
@@ -53,7 +58,10 @@ class UI:
             button.draw(screen)
 
         # screen.blit(self.surface, (0, config.screenSize[1] - self.surface.get_height()))
-        screen.blit(self.coin, (config.uiPadding, config.uiPadding))
+        screen.blit(self.coin, (config.uiPadding, config.uiPadding))       
 
-        text = self.font.render('30', False, (255, 255, 255))
+        game = singletons._game
+        text = self.font.render(f"{game.coins}", False, (255, 255, 255))
         screen.blit(text, (config.uiGap * 2 + self.coin.get_width(), config.uiGap))
+
+    

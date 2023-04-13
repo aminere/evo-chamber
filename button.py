@@ -11,22 +11,25 @@ class Button:
         self.pressed = False
         self.hovered = False
         self.selected = False
+        self.disabled = False
         self.rect = pg.Rect(position, image.get_size())
 
     def draw(self, screen):
 
         yOffset = 0
         alpha = 255
+        if (self.disabled):
+            alpha = 128
         if (self.pressed):
             yOffset = 3
         elif (self.hovered):
-            alpha = 128
+            yOffset = -3
         
         self.image.set_alpha(alpha)
         
         screen.blit(self.image, (self.position[0], self.position[1] + yOffset))
 
-        if (self.selected):
+        if (self.selected and not self.disabled):
             pg.draw.rect(screen, (255, 255, 0), self.rect, 2)
 
         # text = self.font.render("Hello World", True, (255, 255, 255))
