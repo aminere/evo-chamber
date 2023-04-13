@@ -8,8 +8,10 @@ import character
 import ui
 
 tileSprites = [
-    pg.image.load('images/tile-ground.png'),
     pg.image.load('images/tile-grass.png'),
+    pg.image.load('images/tile-ground.png'),
+    pg.image.load('images/tile-ground2.png'),
+    pg.image.load('images/tile-ground3.png')
 ]
 
 class Game:
@@ -27,7 +29,7 @@ class Game:
         self.tiles = list(itertools.repeat(0, config.worldSize[0] * config.worldSize[1]))
 
         self.origin = (config.worldSize[0] - 1) * config.tileSize[0] // 2, 0
-        self.farmer = character.Character('farmer', (3, 3), 130)
+        # self.farmer = character.Character('farmer', (3, 3), 130)
 
         self.ui = ui.UI()
 
@@ -40,24 +42,25 @@ class Game:
 
     def update(self):
 
-        self.farmer.update(self.dt)
+        # self.farmer.update(self.dt)
 
         # camera
+        margin = 80
         mousePos = mouseX, mouseY = pg.mouse.get_pos()
         if (not self.ui.rect.collidepoint(mousePos)):
             if (mouseX > config.screenSize[0] - config.scrollMargin):
                 self.cameraPos = (self.cameraPos[0] - config.scrollSpeed * self.dt, self.cameraPos[1])
-                self.cameraPos = (max(self.cameraPos[0], config.screenSize[0] - self.tilesSurface.get_width()), self.cameraPos[1])
+                self.cameraPos = (max(self.cameraPos[0], config.screenSize[0] - self.tilesSurface.get_width() - margin), self.cameraPos[1])
             elif (mouseX < config.scrollMargin):
                 self.cameraPos = (self.cameraPos[0] + config.scrollSpeed * self.dt, self.cameraPos[1])
-                self.cameraPos = (min(self.cameraPos[0], 0), self.cameraPos[1])
+                self.cameraPos = (min(self.cameraPos[0], margin), self.cameraPos[1])
             bottomEdge = config.screenSize[1] - config.bottomUI['height']
             if (mouseY > bottomEdge - config.scrollMargin):            
                 self.cameraPos = (self.cameraPos[0], self.cameraPos[1] - config.scrollSpeed * self.dt)
-                self.cameraPos = (self.cameraPos[0], max(self.cameraPos[1], bottomEdge - self.tilesSurface.get_height()))
+                self.cameraPos = (self.cameraPos[0], max(self.cameraPos[1], bottomEdge - self.tilesSurface.get_height() - margin))
             elif (mouseY < config.scrollMargin):
                 self.cameraPos = (self.cameraPos[0], self.cameraPos[1] + config.scrollSpeed * self.dt)    
-                self.cameraPos = (self.cameraPos[0], min(self.cameraPos[1], 0))
+                self.cameraPos = (self.cameraPos[0], min(self.cameraPos[1], margin))
 
         self.dt = self.clock.tick(config.fps) / 1000
         pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}")
@@ -73,7 +76,7 @@ class Game:
             sx, sy = utils.worldToScreen(self.selected)
             self.screen.blit(self.tileSelected, (sx + self.cameraPos[0], sy + self.cameraPos[1]))
 
-        self.farmer.draw(self.screen)
+        # self.farmer.draw(self.screen)
         self.ui.draw(self.screen)
 
     def onMouseMoved(self, x, y):        
@@ -90,26 +93,30 @@ class Game:
         elif (maskColor == (255, 255, 0, 255)):
             self.selected = self.selected[0] + 1, self.selected[1]
 
-    def onMouseUp(self, button):
+    def onMouseUp(self, button, mousePos):
         if (button == pg.BUTTON_LEFT):
 
             if (self.ui.pressedButton != None):
-                self.ui.pressedButton.onClick()
+                action = self.ui.pressedButton.action
+                print(action)
                 self.ui.pressedButton = None
+                return
+            
+            if (self.ui.rect.collidepoint(mousePos)):
                 return
 
             # toggle tiles
             x, y = self.selected
             if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):
-                self.farmer.moveTo(self.selected)
-                # index = y * config.worldSize[0] + x
-                # self.tiles[index] = (self.tiles[index] + 1) % len(tileSprites)
-                # startY = max(0, y - 1)
-                # for _y in range(config.worldSize[1] - startY):
-                #     for _x in range(config.worldSize[0]):
-                #         yCoord = startY + _y
-                #         index = yCoord * config.worldSize[0] + _x
-                #         sprite = tileSprites[self.tiles[index]]                        
-                #         sx, sy = Game.worldToScreen((_x, yCoord))
-                #         self.tilesSurface.blit(sprite, (sx, sy))
+                # self.farmer.moveTo(self.selected)
+                index = y * config.worldSize[0] + x
+                self.tiles[index] = (self.tiles[index] + 1) % len(tileSprites)
+                startY = max(0, y - 1)
+                for _y in range(config.worldSize[1] - startY):
+                    for _x in range(config.worldSize[0]):
+                        yCoord = startY + _y
+                        index = yCoord * config.worldSize[0] + _x
+                        sprite = tileSprites[self.tiles[index]]                        
+                        sx, sy = utils.worldToScreen((_x, yCoord))
+                        self.tilesSurface.blit(sprite, (sx, sy))
 

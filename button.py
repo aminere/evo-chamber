@@ -4,10 +4,10 @@ import singletons
 from enum import Enum
 
 class Button:
-    def __init__(self, image, position, onClick):
+    def __init__(self, image, position, action):
         self.image = image        
         self.position = position
-        self.onClick = onClick
+        self.action = action
         self.pressed = False
         self.hovered = False
         self.rect = pg.Rect(position, image.get_size())

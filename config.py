@@ -1,5 +1,5 @@
 
-bgColor = (0, 0, 0)
+bgColor = (17, 17, 17)
 screenSize = (1024, 768)
 fps = 60
 

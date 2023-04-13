@@ -17,7 +17,7 @@ while True:
                 pg.quit()
                 sys.exit()
         elif event.type == pg.MOUSEBUTTONUP:
-            game.onMouseUp(event.button)
+            game.onMouseUp(event.button, event.pos)
         elif event.type == pg.MOUSEMOTION:            
             x, y = event.pos
             game.onMouseMoved(x, y)
