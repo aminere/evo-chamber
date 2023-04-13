@@ -6,15 +6,14 @@ import button
 class UI:
     def __init__(self):
 
-        height = config.bottomUI['height']
-        self.surface = pg.Surface((config.screenSize[0], height))
-        self.font = pg.font.SysFont("Arial", 32)
+        # height = config.uiHeight
+        # self.surface = pg.Surface((config.screenSize[0], height))
+        self.font = pg.font.Font("fixedsys.ttf", 48)
+        self.coin = pg.image.load('images/ui/coin.png')
         
-        self.rect = pg.Rect(0, config.screenSize[1] - height, self.surface.get_width(), height)
+        # self.rect = pg.Rect(0, config.screenSize[1] - height, self.surface.get_width(), height)
         self.pressedButton = None
-        
-        padding = 10
-        gap = 10
+        self.hoveredButton = None     
 
         actions = [
             "plough",
@@ -23,29 +22,38 @@ class UI:
         ]
         self.buttons = []
 
-        xPos = padding
+        iconSize = 128
+        width = iconSize * len(actions) + config.uiGap * (len(actions) - 1)
+        yPos = config.screenSize[1] - iconSize - config.uiPadding
+        xPos = (config.screenSize[0] - width) // 2
         for action in actions:
             image = pg.image.load('images/ui/icon-' + action + '.png')
-            self.buttons.append(button.Button(image, (xPos, padding), action))
-            xPos += image.get_width() + gap                
+            self.buttons.append(button.Button(image, (xPos, yPos), action))
+            xPos += image.get_width() + config.uiGap
 
     def update(self):
         (leftPressed, _, _) = pg.mouse.get_pressed()
         mousPos = pg.mouse.get_pos()
-        localPos = mousPos[0], mousPos[1] - self.rect.y
+        hoveredButton = None
         for button in self.buttons:
-            if (button.rect.collidepoint(localPos)):
+            if (button.rect.collidepoint(mousPos)):
                 button.hovered = True
+                hoveredButton = button
                 button.pressed = leftPressed
                 if (leftPressed):
                     self.pressedButton = button
             else:   
                 button.hovered = False
                 button.pressed = False
+        self.hoveredButton = hoveredButton
 
     def draw(self, screen):        
-        self.surface.fill(config.bottomUI['bgColor'])
+        # self.surface.fill(config.uiBgColor)
         for button in self.buttons:
-            button.draw(self.surface)
+            button.draw(screen)
 
-        screen.blit(self.surface, (0, config.screenSize[1] - self.surface.get_height()))
+        # screen.blit(self.surface, (0, config.screenSize[1] - self.surface.get_height()))
+        screen.blit(self.coin, (config.uiPadding, config.uiPadding))
+
+        text = self.font.render('30', False, (255, 255, 255))
+        screen.blit(text, (config.uiGap * 2 + self.coin.get_width(), config.uiGap))
