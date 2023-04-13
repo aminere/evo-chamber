@@ -9,3 +9,8 @@ mapSize = worldSize[0] * tileSize[0], worldSize[1] * tileSize[1]
 
 scrollSpeed = 800
 scrollMargin = 100
+
+bottomUI = {
+    'height': 200,
+}
+
