@@ -7,6 +7,7 @@ singletons.init()
 
 while True:
     game = singletons._game
+    
     for event in pg.event.get():
         if event.type == pg.QUIT:
             pg.quit()
@@ -20,7 +21,7 @@ while True:
         elif event.type == pg.MOUSEMOTION:            
             x, y = event.pos
             game.onMouseMoved(x, y)
-
+    
     game.update()
     game.draw()
     pg.display.flip()

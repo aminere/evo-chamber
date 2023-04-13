@@ -93,6 +93,11 @@ class Game:
     def onMouseUp(self, button):
         if (button == pg.BUTTON_LEFT):
 
+            if (self.ui.pressedButton != None):
+                self.ui.pressedButton.onClick()
+                self.ui.pressedButton = None
+                return
+
             # toggle tiles
             x, y = self.selected
             if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):
