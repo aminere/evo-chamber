@@ -12,11 +12,19 @@ class UI:
 
         topEdge = config.screenSize[1] - height
         padding = 10
+        gap = 10
+
+        buildIcon = pg.image.load('images/ui/build.png')
         self.buttons = [
             button.Button(
-                pg.image.load('images/ui/build.png'),
+                buildIcon,
                 (padding, topEdge + padding),
-                lambda: print('onClick')
+                lambda: print('onClick build')
+            ),
+            button.Button(
+                pg.image.load('images/ui/worker.png'),
+                (padding + buildIcon.get_width() + gap, topEdge + padding),
+                lambda: print('onClick worker')
             )
         ]
 
