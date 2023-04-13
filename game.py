@@ -32,6 +32,7 @@ class Game:
         # self.farmer = character.Character('farmer', (3, 3), 130)
 
         self.ui = ui.UI()
+        self.action = None
 
         # generate map
         self.tilesSurface.fill(config.bgColor)
@@ -71,10 +72,11 @@ class Game:
         self.screen.fill(config.bgColor)
         self.screen.blit(self.tilesSurface, self.cameraPos)       
 
-        x, y = self.selected
-        if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):
-            sx, sy = utils.worldToScreen(self.selected)
-            self.screen.blit(self.tileSelected, (sx + self.cameraPos[0], sy + self.cameraPos[1]))
+        if (self.ui.hoveredButton == None):
+            x, y = self.selected
+            if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):
+                sx, sy = utils.worldToScreen(self.selected)
+                self.screen.blit(self.tileSelected, (sx + self.cameraPos[0], sy + self.cameraPos[1]))
 
         # self.farmer.draw(self.screen)
         self.ui.draw(self.screen)
@@ -97,9 +99,11 @@ class Game:
         if (button == pg.BUTTON_LEFT):
 
             if (self.ui.pressedButton != None):
-                action = self.ui.pressedButton.action
-                print(action)
+                self.action = self.ui.pressedButton.action
+                print(self.action)
                 self.ui.pressedButton = None
+                for button in self.ui.buttons:
+                    button.selected = button.action == self.action
                 return
             
             if (self.ui.hoveredButton != None):
