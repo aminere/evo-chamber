@@ -3,21 +3,27 @@ import pygame as pg
 import singletons
 from enum import Enum
 
-class State (Enum):
-    NORMAL = 1
-    HOVER = 2
-    PRESSED = 3
-
 class Button:
-    def __init__(self, x, y, image, callback):
-        self.x = x
-        self.y = y
-        self.image = image
-        self.callback = callback
-        self.state = State.NORMAL
+    def __init__(self, image, position):
+        self.image = image        
+        self.position = position
+        # self.callback = callback
+        self.pressed = False
+        self.hovered = False
+        self.rect = pg.Rect(position, image.get_size())
 
-    def draw(self):
-        screen = singletons._game.screen
-        if (self.state == State.NORMAL):
-            pg.draw.rect(screen, (0, 0, 0), (self.x, self.y, 100, 100))
+    def draw(self, screen):
+
+        yOffset = 0
+        alpha = 255
+        if (self.pressed):
+            yOffset = 3
+        elif (self.hovered):
+            alpha = 128        
+        
+        self.image.set_alpha(alpha)
+        screen.blit(self.image, (self.position[0], self.position[1] + yOffset))
+
+        # text = self.font.render("Hello World", True, (255, 255, 255))
+        # screen.blit(text, (0, 0))
 

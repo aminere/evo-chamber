@@ -32,7 +32,7 @@ class Game:
         self.ui = ui.UI()
 
         # generate map
-        self.tilesSurface.fill((35, 35, 35))
+        self.tilesSurface.fill(config.bgColor)
         for y in range(config.worldSize[1]):
             for x in range(config.worldSize[0]):
                 sx, sy = utils.worldToScreen((x, y))
@@ -62,8 +62,10 @@ class Game:
         self.dt = self.clock.tick(config.fps) / 1000
         pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}")
 
+        self.ui.update()
+
     def draw(self):        
-        self.screen.fill((0, 0, 0))
+        self.screen.fill(config.bgColor)
         self.screen.blit(self.tilesSurface, self.cameraPos)       
 
         x, y = self.selected

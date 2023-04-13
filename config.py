@@ -1,4 +1,5 @@
 
+bgColor = (0, 0, 0)
 screenSize = (1024, 768)
 fps = 60
 
@@ -11,6 +12,7 @@ scrollSpeed = 800
 scrollMargin = 100
 
 bottomUI = {
+    'bgColor': (17, 17, 17),
     'height': 200,
 }
 
