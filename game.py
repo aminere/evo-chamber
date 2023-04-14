@@ -62,15 +62,15 @@ class Game:
         # camera
         margin = 80
         mouseX, mouseY = pg.mouse.get_pos()
+        bottomEdge = config.screenSize[1] - 50
         if (self.ui.hoveredButton == None):
             if (mouseX > config.screenSize[0] - config.scrollMargin):
                 self.cameraPos = (self.cameraPos[0] - config.scrollSpeed * self.dt, self.cameraPos[1])
                 self.cameraPos = (max(self.cameraPos[0], config.screenSize[0] - self.tilesSurface.get_width() - margin), self.cameraPos[1])
             elif (mouseX < config.scrollMargin):
                 self.cameraPos = (self.cameraPos[0] + config.scrollSpeed * self.dt, self.cameraPos[1])
-                self.cameraPos = (min(self.cameraPos[0], margin), self.cameraPos[1])
-            bottomEdge = config.screenSize[1]
-            if (mouseY > bottomEdge - config.scrollMargin):            
+                self.cameraPos = (min(self.cameraPos[0], margin), self.cameraPos[1])            
+            if (mouseY > bottomEdge):            
                 self.cameraPos = (self.cameraPos[0], self.cameraPos[1] - config.scrollSpeed * self.dt)
                 self.cameraPos = (self.cameraPos[0], max(self.cameraPos[1], bottomEdge - self.tilesSurface.get_height() - margin))
             elif (mouseY < config.scrollMargin):

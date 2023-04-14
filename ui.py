@@ -19,11 +19,12 @@ class UI:
         actions = [
             "plough",
             "plant",
-            "water"
+            "water",
+            "pick"
         ]
         self.buttons = []
 
-        iconSize = 128
+        iconSize = 100
         width = iconSize * len(actions) + config.uiGap * (len(actions) - 1)
         yPos = config.screenSize[1] - iconSize - config.uiPadding
         xPos = (config.screenSize[0] - width) // 2
