@@ -9,11 +9,6 @@ import ui
 import linkedlist
 import math
 
-rawTile = 0
-ploughedTile = rawTile + 1
-plantedTile = ploughedTile + 1
-readyTile = plantedTile + 2
-stoneTile = readyTile + 1
 tileSprites = [
     pg.image.load('images/tile-grass.png'), # raw
     pg.image.load('images/tile-ground.png'), # ploughed
@@ -42,7 +37,7 @@ class Game:
         self.tilesSurface = pg.Surface(config.mapSize)
 
         tileCount = config.worldSize[0] * config.worldSize[1]
-        self.tiles = list(itertools.repeat((rawTile, 0, None), tileCount))
+        self.tiles = list(itertools.repeat((config.rawTile, 0, None), tileCount))
 
         self.origin = (config.worldSize[0] - 1) * config.tileSize[0] // 2, 0
 
@@ -53,6 +48,8 @@ class Game:
 
         self.ui = ui.UI()
         self.action = None
+        self.actionAllowed = False
+        self.selectorInRange = False
         self.coins = config.coins
         self.plantedTiles = linkedlist.LinkedList()
         # self.readyToHarvestTiles = linkedlist.LinkedList()
@@ -64,7 +61,7 @@ class Game:
         for y in range(config.worldSize[1]):
             for x in range(config.worldSize[0]):
                 sx, sy = utils.worldToScreen((x, y))
-                tile = self.tiles[utils.getTileIndex((x, y))]
+                tile = self.tiles[utils.worldToIndex((x, y))]
                 (_, _, worker) = tile
                 if (worker != None):
                     self.tilesSurface.blit(self.workerTile, (sx, sy))
@@ -104,7 +101,7 @@ class Game:
         while tile is not None:
             index = tile.data
             (state, time, _) = self.tiles[index]
-            if (state == readyTile):
+            if (state == config.readyTile):
                 tile = tile.next
                 continue
             time += self.dt
@@ -121,33 +118,13 @@ class Game:
         self.screen.fill(config.bgColor)
         self.screen.blit(self.tilesSurface, self.cameraPos)
 
-        if (self.action != None and self.ui.hoveredButton == None):            
-            x, y = self.selected
-            if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):
-                sx, sy = utils.worldToScreen(self.selected)
-                index = y * config.worldSize[0] + x
-                if (index != self.lastChangedTile):
-                    allowed = False
-
-                    state, _, worker = self.tiles[index]
-                    if (worker != None):
-                        allowed = False
-                    if (self.action == "harvest"):
-                        allowed = state == readyTile
-                    elif (self.action == "plough"):
-                        allowed = state == rawTile
-                    elif (self.action == "plant"):
-                        allowed = state == ploughedTile
-                    elif (self.action == "water"):
-                        allowed = state >= plantedTile and state < readyTile
-                    elif (self.action == "pick"):
-                        allowed = state == stoneTile
-                        
-                    tilePos = (sx + self.cameraPos[0], sy + self.cameraPos[1])
-                    if (allowed):
-                        self.screen.blit(self.tileSelected, tilePos)
-                    else:
-                        self.screen.blit(self.tileSelectedRed, tilePos)
+        if (self.action != None and self.selectorInRange and self.ui.hoveredButton == None):
+            sx, sy = utils.worldToScreen(self.selected)
+            tilePos = (sx + self.cameraPos[0], sy + self.cameraPos[1])
+            if (self.actionAllowed):
+                self.screen.blit(self.tileSelected, tilePos)
+            else:
+                self.screen.blit(self.tileSelectedRed, tilePos)            
 
         # draw harvest indicators
         # tile = self.readyToHarvestTiles.head
@@ -183,6 +160,28 @@ class Game:
         if (selected != self.selected):
             self.selected = selected
             self.lastChangedTile = None
+            x, y = self.selected
+            if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):                
+                index = y * config.worldSize[0] + x
+                state, _, worker = self.tiles[index]
+                allowed = False
+                if (worker != None):
+                    pass
+                elif (self.action == "plough"):
+                    allowed = state == config.rawTile
+                elif (self.action == "plant"):
+                    allowed = state == config.ploughedTile
+                elif (self.action == "water"):
+                    allowed = state >= config.plantedTile and state < config.readyTile
+                elif (self.action == "harvest"):
+                    allowed = state == config.readyTile
+                elif (self.action == "pick"):
+                    allowed = state == config.stoneTile
+                self.actionAllowed = allowed
+                self.selectorInRange = True
+            else:
+                self.selectorInRange = False
+
 
     def onMouseUp(self, button, mousePos):
         if (button == pg.BUTTON_LEFT):
@@ -200,52 +199,10 @@ class Game:
             if (self.ui.hoveredButton != None):
                 return
 
-            if (self.action != None):
-                x, y = self.selected
-                if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):
-                    index = y * config.worldSize[0] + x                    
-                    state, _, worker = self.tiles[index]
-                    if (worker != None):
-                        pass
-                    else:
-                        # get closest worker
-                        closestWorker = self.getClosestWorker(self.selected)    
-                        
-                        if self.action == 'harvest':
-                            if state == readyTile:
-                                # self.queueAction(closestWorker, 'harvest', index)
-                                self.tiles[index] = (stoneTile, 0, None)
-                                self.updateCoins(config.harvestGain)
-                                self.redrawTiles(index)
-                                self.plantedTiles.delete(index)
-                                # self.readyToHarvestTiles.delete(index)
-                                self.lastChangedTile = index
-                        elif (self.action == 'plough'):
-                            if (state == rawTile):
-                                # closestWorker.queueAction('plough', index)
-                                self.tiles[index] = (ploughedTile, 0, None)
-                                self.updateCoins(-config.ploughCost)
-                                self.redrawTiles(index)
-                                self.lastChangedTile = index
-                      
-                        elif (self.action == 'plant'):
-                            if (state == ploughedTile):
-                                self.tiles[index] = (plantedTile, 0, None)
-                                self.updateCoins(-config.plantCost)
-                                self.redrawTiles(index)                            
-                                self.plantedTiles.append(index)
-                                self.lastChangedTile = index
-                        elif (self.action == 'water'):
-                            if (state >= plantedTile and state < stoneTile):
-                                self.tiles[index] = (state, config.growDuration, None)
-                                self.updateCoins(-config.waterCost)
-                                self.lastChangedTile = index
-                        elif (self.action == 'pick'):
-                            if (state == stoneTile):
-                                self.tiles[index] = (rawTile, 0, None)
-                                self.updateCoins(-config.pickCost)
-                                self.redrawTiles(index)
-                                self.lastChangedTile = index
+            if (self.action != None and self.actionAllowed):
+                index = utils.worldToIndex(self.selected)
+                closestWorker = self.getClosestWorker(self.selected)
+                closestWorker.queueAction(self.action, index)                                                 
 
     def tryUpdateButton(self, button, action, cost):
         updated = False
@@ -281,7 +238,7 @@ class Game:
     def addWorker(self, pos):
         worker = character.Character("farmer", pos, 33)
         self.workers.append(worker)
-        self.tiles[utils.getTileIndex(pos)] = (rawTile, 0, worker)
+        self.tiles[utils.worldToIndex(pos)] = (config.rawTile, 0, worker)
 
     def getClosestWorker(self, pos):
         closestWorker = None

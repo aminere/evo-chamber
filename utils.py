@@ -1,5 +1,6 @@
 
 import config
+import math
 
 def worldToScreen(position):
     x, y = map(lambda i: int(i), position)
@@ -12,9 +13,14 @@ def screenToWorld(position, cameraPos):
     tx, ty = lx % config.tileSize[0], ly % config.tileSize[1]    
     return (cx + cy, cy - cx), tx, ty
 
-def getTileIndex(position):
+def worldToIndex(position):
     x, y = position
     return x + y * config.worldSize[0]
+
+def indexToWorld(index):
+    y = math.floor(index / config.worldSize[0])
+    x = index - y * config.worldSize[0]
+    return x, y
 
 def lerp(a, b, t):
     return a + (b - a) * t

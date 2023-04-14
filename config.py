@@ -15,6 +15,12 @@ uiBgColor = (17, 17, 17)
 uiPadding = 20
 uiGap = 20
 
+rawTile = 0
+ploughedTile = rawTile + 1
+plantedTile = ploughedTile + 1
+readyTile = plantedTile + 2
+stoneTile = readyTile + 1
+
 coins = 30
 ploughCost = 1
 plantCost = 2
@@ -22,5 +28,6 @@ waterCost = 5
 pickCost = 2
 harvestGain = 20
 growDuration = 10
+workerSpeed = 0.7
 
 firstWorkerPos = (0, worldSize[1] // 2 - 1)
