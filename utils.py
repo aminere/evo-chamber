@@ -12,6 +12,10 @@ def screenToWorld(position, cameraPos):
     tx, ty = lx % config.tileSize[0], ly % config.tileSize[1]    
     return (cx + cy, cy - cx), tx, ty
 
+def getTileIndex(position):
+    x, y = position
+    return x + y * config.worldSize[0]
+
 def lerp(a, b, t):
     return a + (b - a) * t
 

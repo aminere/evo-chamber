@@ -22,3 +22,5 @@ waterCost = 5
 pickCost = 2
 harvestGain = 20
 growDuration = 10
+
+firstWorkerPos = (0, worldSize[1] // 2 - 1)
