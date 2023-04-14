@@ -31,11 +31,11 @@ class Game:
         self.tileMask = pg.image.load('images/tile-mask.png')
         self.tileSelected = pg.image.load('images/tile-selected.png')
         self.tileSelectedRed = pg.image.load('images/tile-selected-red.png')
-        self.tileSelectedRed.set_alpha(128)
+        # self.tileSelectedRed.set_alpha(128)
         self.harvestIndicator = pg.image.load('images/ui/harvest-indicator.png')
 
         self.tilesSurface = pg.Surface(config.mapSize)
-        self.tiles = list(itertools.repeat(0, config.worldSize[0] * config.worldSize[1]))
+        self.tiles = list(itertools.repeat((rawTile, 0), config.worldSize[0] * config.worldSize[1]))
 
         self.origin = (config.worldSize[0] - 1) * config.tileSize[0] // 2, 0
         # self.farmer = character.Character('farmer', (3, 3), 130)
@@ -45,6 +45,7 @@ class Game:
         self.coins = config.coins
         self.plantedTiles = linkedlist.LinkedList()
         self.readyToHarvestTiles = linkedlist.LinkedList()
+        self.lastChangedTile = None
         self.updateCoins(0)
 
         # generate map
@@ -84,39 +85,43 @@ class Game:
         # update tiles
         tile = self.plantedTiles.head
         while tile is not None:
-            index, state, time = tile.data
+            index = tile.data
+            (state, time) = self.tiles[index]
+            if (state == readyTile):
+                tile = tile.next
+                continue
             time += self.dt
-            tile.data = index, state, time
-            if (time >= 1):
-                if state < len(tileSprites) - 1:
-                    newState = state + 1
-                    self.tiles[index] = newState
-                    self.redrawTiles(index)
-                    tile.data = index, state + 1, 0
-                    if newState == readyTile:
-                        self.readyToHarvestTiles.append(index)                    
-
+            self.tiles[index] = (state, time)
+            if (time >= config.growDuration):
+                newState = state + 1
+                self.tiles[index] = (newState, 0)
+                self.redrawTiles(index)
+                if (newState == readyTile):
+                    self.readyToHarvestTiles.append(index)
             tile = tile.next
 
     def draw(self):        
         self.screen.fill(config.bgColor)
         self.screen.blit(self.tilesSurface, self.cameraPos)
 
-        if (self.ui.hoveredButton == None):
-            if (self.action != None):
-                x, y = self.selected
-                if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):
-                    sx, sy = utils.worldToScreen(self.selected)
-                    index = y * config.worldSize[0] + x
+        if (self.action != None and self.ui.hoveredButton == None):            
+            x, y = self.selected
+            if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):
+                sx, sy = utils.worldToScreen(self.selected)
+                index = y * config.worldSize[0] + x
+                if (index != self.lastChangedTile):
                     allowed = False
 
-                    if (self.tiles[index] == readyTile):
+                    state, _ = self.tiles[index]
+                    if (state == readyTile):
                         allowed = True                        
 
                     elif (self.action == "plough"):
-                        allowed = self.tiles[index] == rawTile                        
+                        allowed = state == rawTile                        
                     elif (self.action == "plant"):
-                        allowed = self.tiles[index] == ploughedTile
+                        allowed = state == ploughedTile
+                    elif (self.action == "water"):
+                        allowed = state >= plantedTile
                         
                     tilePos = (sx + self.cameraPos[0], sy + self.cameraPos[1])
                     if (allowed):
@@ -141,16 +146,20 @@ class Game:
     def onMouseMoved(self, x, y):
 
         # tile selection
-        self.selected, tx, ty = utils.screenToWorld((x, y), self.cameraPos)        
+        selected, tx, ty = utils.screenToWorld((x, y), self.cameraPos)
         maskColor = self.tileMask.get_at((tx, ty))
         if (maskColor == (255, 0, 0, 255)):
-             self.selected = self.selected[0] - 1, self.selected[1]
+             selected = selected[0] - 1, selected[1]
         elif (maskColor == (0, 255, 0, 255)):
-            self.selected = self.selected[0], self.selected[1] - 1
+            selected = selected[0], selected[1] - 1
         elif (maskColor == (0, 0, 255, 255)):
-            self.selected = self.selected[0], self.selected[1] + 1
+            selected = selected[0], selected[1] + 1
         elif (maskColor == (255, 255, 0, 255)):
-            self.selected = self.selected[0] + 1, self.selected[1]
+            selected = selected[0] + 1, selected[1]
+
+        if (selected != self.selected):
+            self.selected = selected
+            self.lastChangedTile = None
 
     def onMouseUp(self, button, mousePos):
         if (button == pg.BUTTON_LEFT):
@@ -171,24 +180,33 @@ class Game:
             if (self.action != None):
                 x, y = self.selected
                 if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):
-                    index = y * config.worldSize[0] + x
-                    if self.tiles[index] == readyTile:
-                        self.tiles[index] = rawTile
+                    index = y * config.worldSize[0] + x                    
+                    state, _ = self.tiles[index]
+                    if state == readyTile:
+                        self.tiles[index] = (rawTile, 0)
                         self.updateCoins(config.harvestGain)
                         self.redrawTiles(index)
-                        self.plantedTiles.delete(lambda data: data[0] == index)
-                        self.readyToHarvestTiles.delete(lambda data: data == index)
+                        self.plantedTiles.delete(index)
+                        self.readyToHarvestTiles.delete(index)
+                        self.lastChangedTile = index
                     elif (self.action == 'plough'):
-                        if (self.tiles[index] == rawTile):
-                            self.tiles[index] = ploughedTile
+                        if (state == rawTile):
+                            self.tiles[index] = (ploughedTile, 0)
                             self.updateCoins(-config.ploughCost)
                             self.redrawTiles(index)
+                            self.lastChangedTile = index
                     elif (self.action == 'plant'):
-                        if (self.tiles[index] == ploughedTile):
-                            self.tiles[index] = plantedTile
+                        if (state == ploughedTile):
+                            self.tiles[index] = (plantedTile, 0)
                             self.updateCoins(-config.plantCost)
                             self.redrawTiles(index)                            
-                            self.plantedTiles.append((index, plantedTile, 0.0))
+                            self.plantedTiles.append(index)
+                            self.lastChangedTile = index
+                    elif (self.action == 'water'):
+                        if (state >= plantedTile):
+                            self.tiles[index] = (state, config.growDuration)
+                            self.updateCoins(-config.waterCost)
+                            
 
 
     def tryUpdateButton(self, button, action, cost):
@@ -214,7 +232,8 @@ class Game:
             for _x in range(config.worldSize[0]):
                 yCoord = startY + _y
                 index = yCoord * config.worldSize[0] + _x
-                sprite = tileSprites[self.tiles[index]]                        
+                state, _ = self.tiles[index]
+                sprite = tileSprites[state]                        
                 sx, sy = utils.worldToScreen((_x, yCoord))
                 self.tilesSurface.blit(sprite, (sx, sy))
 

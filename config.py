@@ -20,3 +20,4 @@ ploughCost = 1
 plantCost = 2
 waterCost = 5
 harvestGain = 20
+growDuration = 10

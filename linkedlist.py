@@ -20,18 +20,18 @@ class LinkedList:
 
         current_node.next = new_node    
 
-    def delete(self, test):
+    def delete(self, data):
         if self.head is None:
             return
 
-        if test(self.head.data):
+        if data == self.head.data:
             self.head = self.head.next            
             return
 
         index = 1
         current_node = self.head
         while current_node.next is not None:
-            if test(current_node.next.data):
+            if data == current_node.next.data:
                 current_node.next = current_node.next.next
                 index += 1
                 return
