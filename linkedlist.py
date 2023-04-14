@@ -35,4 +35,10 @@ class LinkedList:
                 current_node.next = current_node.next.next
                 index += 1
                 return
-            current_node = current_node.next    
+            current_node = current_node.next   
+
+    def deleteHead(self):
+        if self.head is None:
+            return
+
+        self.head = self.head.next 

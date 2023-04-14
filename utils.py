@@ -28,3 +28,5 @@ def lerp2d_InOutCubic(a, b, t):
         _t = 1 - ((-2 * t + 2)**3) / 2
     return a[0] + (b[0] - a[0]) * _t, a[1] + (b[1] - a[1]) * _t
     
+def distSquared(a, b):
+    return ((a[0] - b[0])**2 + (a[1] - b[1])**2)
