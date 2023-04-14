@@ -6,15 +6,18 @@ import config
 import utils
 import character
 import ui
+import linkedlist
+import math
 
 rawTile = 0
 ploughedTile = 1
 plantedTile = 2
+readyTile = 3
 tileSprites = [
     pg.image.load('images/tile-grass.png'), # raw
     pg.image.load('images/tile-ground.png'), # ploughed
     pg.image.load('images/tile-ground2.png'), # planted
-    pg.image.load('images/tile-ground3.png')
+    pg.image.load('images/tile-ground3.png') # ready
 ]
 
 class Game:
@@ -28,6 +31,8 @@ class Game:
         self.tileMask = pg.image.load('images/tile-mask.png')
         self.tileSelected = pg.image.load('images/tile-selected.png')
         self.tileSelectedRed = pg.image.load('images/tile-selected-red.png')
+        self.tileSelectedRed.set_alpha(128)
+        self.harvestIndicator = pg.image.load('images/ui/harvest-indicator.png')
 
         self.tilesSurface = pg.Surface(config.mapSize)
         self.tiles = list(itertools.repeat(0, config.worldSize[0] * config.worldSize[1]))
@@ -38,6 +43,8 @@ class Game:
         self.ui = ui.UI()
         self.action = None
         self.coins = config.coins
+        self.plantedTiles = linkedlist.LinkedList()
+        self.readyToHarvestTiles = linkedlist.LinkedList()
         self.updateCoins(0)
 
         # generate map
@@ -74,6 +81,23 @@ class Game:
 
         self.ui.update()
 
+        # update tiles
+        tile = self.plantedTiles.head
+        while tile is not None:
+            index, state, time = tile.data
+            time += self.dt
+            tile.data = index, state, time
+            if (time >= 1):
+                if state < len(tileSprites) - 1:
+                    newState = state + 1
+                    self.tiles[index] = newState
+                    self.redrawTiles(index)
+                    tile.data = index, state + 1, 0
+                    if newState == readyTile:
+                        self.readyToHarvestTiles.append(index)                    
+
+            tile = tile.next
+
     def draw(self):        
         self.screen.fill(config.bgColor)
         self.screen.blit(self.tilesSurface, self.cameraPos)
@@ -85,8 +109,12 @@ class Game:
                     sx, sy = utils.worldToScreen(self.selected)
                     index = y * config.worldSize[0] + x
                     allowed = False
-                    if (self.action == "plough"):
-                        allowed = self.tiles[index] == rawTile
+
+                    if (self.tiles[index] == readyTile):
+                        allowed = True                        
+
+                    elif (self.action == "plough"):
+                        allowed = self.tiles[index] == rawTile                        
                     elif (self.action == "plant"):
                         allowed = self.tiles[index] == ploughedTile
                         
@@ -95,6 +123,17 @@ class Game:
                         self.screen.blit(self.tileSelected, tilePos)
                     else:
                         self.screen.blit(self.tileSelectedRed, tilePos)
+
+        tile = self.readyToHarvestTiles.head
+        while tile is not None:
+            index = tile.data
+            y = math.floor(index / config.worldSize[0])
+            x = index - y * config.worldSize[0]
+            sx, sy = utils.worldToScreen((x, y))
+            sx += (config.tileSize[0] - self.harvestIndicator.get_width()) // 2
+            sy -= self.harvestIndicator.get_height()
+            self.screen.blit(self.harvestIndicator, (sx + self.cameraPos[0], sy + self.cameraPos[1]))
+            tile = tile.next
 
         # self.farmer.draw(self.screen)
         self.ui.draw(self.screen)
@@ -133,16 +172,23 @@ class Game:
                 x, y = self.selected
                 if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):
                     index = y * config.worldSize[0] + x
-                    if (self.action == 'plough'):
+                    if self.tiles[index] == readyTile:
+                        self.tiles[index] = rawTile
+                        self.updateCoins(config.harvestGain)
+                        self.redrawTiles(index)
+                        self.plantedTiles.delete(lambda data: data[0] == index)
+                        self.readyToHarvestTiles.delete(lambda data: data == index)
+                    elif (self.action == 'plough'):
                         if (self.tiles[index] == rawTile):
                             self.tiles[index] = ploughedTile
                             self.updateCoins(-config.ploughCost)
-                            self.redrawTiles(y)
+                            self.redrawTiles(index)
                     elif (self.action == 'plant'):
                         if (self.tiles[index] == ploughedTile):
                             self.tiles[index] = plantedTile
                             self.updateCoins(-config.plantCost)
-                            self.redrawTiles(y)
+                            self.redrawTiles(index)                            
+                            self.plantedTiles.append((index, plantedTile, 0.0))
 
 
     def tryUpdateButton(self, button, action, cost):
@@ -161,7 +207,8 @@ class Game:
                 if not self.tryUpdateButton(button, 'plant', config.plantCost):
                     self.tryUpdateButton(button, 'water', config.waterCost)
                     
-    def redrawTiles(self, y):
+    def redrawTiles(self, index):
+        y = math.floor(index / config.worldSize[0])
         startY = max(0, y - 1)
         for _y in range(config.worldSize[1] - startY):
             for _x in range(config.worldSize[0]):

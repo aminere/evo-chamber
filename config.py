@@ -15,7 +15,8 @@ uiBgColor = (17, 17, 17)
 uiPadding = 10
 uiGap = 10
 
-coins = 3
+coins = 30
 ploughCost = 1
 plantCost = 2
 waterCost = 5
+harvestGain = 20
