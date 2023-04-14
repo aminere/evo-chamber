@@ -6,6 +6,7 @@ from enum import Enum
 
 import singletons
 import utils
+import config
 
 class State (Enum):
     IDLE = 1
@@ -13,16 +14,17 @@ class State (Enum):
 
 class Character:
     def __init__(self, name, position, yOffset):        
-        self.sprites = {
-            'topLeft': pygame.image.load(f'images/{name}-top-left.png'),
-            'topRight': pygame.image.load(f'images/{name}-top-right.png'),
-            'bottomLeft': pygame.image.load(f'images/{name}-bottom-left.png'),
-            'bottomRight': pygame.image.load(f'images/{name}-bottom-right.png')
-        }
-
+        # self.sprites = {
+        #     'topLeft': pygame.image.load(f'images/{name}-top-left.png'),
+        #     'topRight': pygame.image.load(f'images/{name}-top-right.png'),
+        #     'bottomLeft': pygame.image.load(f'images/{name}-bottom-left.png'),
+        #     'bottomRight': pygame.image.load(f'images/{name}-bottom-right.png')
+        # }
+        self.sprite = pygame.image.load(f'images/{name}.png')
         self.orientation = 'bottomRight'
         self.position = position
         self.yOffset = yOffset
+        self.xOffset = (config.tileSize[0] - self.sprite.get_width()) // 2
         self.state = State.IDLE
         self.moveQueue = None
 
@@ -51,9 +53,10 @@ class Character:
             screenPos = utils.worldToScreen(self.position)        
         
         surface.blit(
-            self.sprites[self.orientation],
+            # self.sprites[self.orientation],
+            self.sprite,
             (
-                screenPos[0] + game.cameraPos[0],
+                screenPos[0] + game.cameraPos[0] + self.xOffset,
                 screenPos[1] + game.cameraPos[1] - self.yOffset
             )
         )

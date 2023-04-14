@@ -40,7 +40,7 @@ class Game:
         self.tiles = list(itertools.repeat((rawTile, 0), config.worldSize[0] * config.worldSize[1]))
 
         self.origin = (config.worldSize[0] - 1) * config.tileSize[0] // 2, 0
-        # self.farmer = character.Character('farmer', (3, 3), 130)
+        self.farmer = character.Character('farmer', (0, 0), 33)
 
         self.ui = ui.UI()
         self.action = None
@@ -59,7 +59,7 @@ class Game:
 
     def update(self):
 
-        # self.farmer.update(self.dt)
+        self.farmer.update(self.dt)
 
         # camera
         margin = 80
@@ -145,7 +145,7 @@ class Game:
             self.screen.blit(self.harvestIndicator, (sx + self.cameraPos[0], sy + self.cameraPos[1]))
             tile = tile.next
 
-        # self.farmer.draw(self.screen)
+        self.farmer.draw(self.screen)
         self.ui.draw(self.screen)
 
     def onMouseMoved(self, x, y):

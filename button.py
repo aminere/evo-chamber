@@ -22,6 +22,7 @@ class Button:
             alpha = 128
         if (self.pressed):
             yOffset = 3
+            alpha = 128
         elif (self.hovered):
             yOffset = -3
         
