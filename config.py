@@ -12,12 +12,13 @@ scrollSpeed = 800
 scrollMargin = 100
 
 uiBgColor = (17, 17, 17)
-uiPadding = 10
-uiGap = 10
+uiPadding = 20
+uiGap = 20
 
 coins = 30
 ploughCost = 1
 plantCost = 2
 waterCost = 5
+pickCost = 2
 harvestGain = 20
 growDuration = 10

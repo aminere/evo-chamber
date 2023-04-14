@@ -30,7 +30,9 @@ class Button:
         screen.blit(self.image, (self.position[0], self.position[1] + yOffset))
 
         if (self.selected and not self.disabled):
-            pg.draw.rect(screen, (255, 255, 0), self.rect, 2)
+            padding = 6
+            rc = self.rect.left - padding, self.rect.top - padding + yOffset, self.rect.width + padding * 2, self.rect.height + padding * 2            
+            pg.draw.rect(screen, (255, 255, 0), rc, 2)
 
         # text = self.font.render("Hello World", True, (255, 255, 255))
         # screen.blit(text, (0, 0))

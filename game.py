@@ -13,11 +13,13 @@ rawTile = 0
 ploughedTile = 1
 plantedTile = 2
 readyTile = 3
+stoneTile = 4
 tileSprites = [
     pg.image.load('images/tile-grass.png'), # raw
     pg.image.load('images/tile-ground.png'), # ploughed
     pg.image.load('images/tile-ground2.png'), # planted
-    pg.image.load('images/tile-ground3.png') # ready
+    pg.image.load('images/tile-ground3.png'), # ready
+    pg.image.load('images/tile-stone.png'), # stone
 ]
 
 class Game:
@@ -117,11 +119,13 @@ class Game:
                         allowed = True                        
 
                     elif (self.action == "plough"):
-                        allowed = state == rawTile                        
+                        allowed = state == rawTile
                     elif (self.action == "plant"):
                         allowed = state == ploughedTile
                     elif (self.action == "water"):
-                        allowed = state >= plantedTile
+                        allowed = state >= plantedTile and state < stoneTile
+                    elif (self.action == "pick"):
+                        allowed = state == stoneTile
                         
                     tilePos = (sx + self.cameraPos[0], sy + self.cameraPos[1])
                     if (allowed):
@@ -129,6 +133,7 @@ class Game:
                     else:
                         self.screen.blit(self.tileSelectedRed, tilePos)
 
+        # draw harvest indicators
         tile = self.readyToHarvestTiles.head
         while tile is not None:
             index = tile.data
@@ -183,7 +188,7 @@ class Game:
                     index = y * config.worldSize[0] + x                    
                     state, _ = self.tiles[index]
                     if state == readyTile:
-                        self.tiles[index] = (rawTile, 0)
+                        self.tiles[index] = (stoneTile, 0)
                         self.updateCoins(config.harvestGain)
                         self.redrawTiles(index)
                         self.plantedTiles.delete(index)
@@ -203,11 +208,15 @@ class Game:
                             self.plantedTiles.append(index)
                             self.lastChangedTile = index
                     elif (self.action == 'water'):
-                        if (state >= plantedTile):
+                        if (state >= plantedTile and state < stoneTile):
                             self.tiles[index] = (state, config.growDuration)
                             self.updateCoins(-config.waterCost)
-                            
-
+                    elif (self.action == 'pick'):
+                        if (state == stoneTile):
+                            self.tiles[index] = (rawTile, 0)
+                            self.updateCoins(-config.pickCost)
+                            self.redrawTiles(index)
+                            self.lastChangedTile = index
 
     def tryUpdateButton(self, button, action, cost):
         updated = False
