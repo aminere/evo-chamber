@@ -11,7 +11,7 @@ class LinkedList:
     def append(self, data):
         new_node = Node(data)
 
-        if self.head is None:
+        if self.head == None:
             self.head = self.queue = new_node
             return
         
@@ -20,7 +20,7 @@ class LinkedList:
         previousQueue.next = self.queue
 
     def delete(self, data):
-        if self.head is None:
+        if self.head == None:
             return
 
         if data == self.head.data:
@@ -28,14 +28,14 @@ class LinkedList:
             return
 
         current_node = self.head
-        while current_node.next is not None:
+        while current_node.next != None:
             if data == current_node.next.data:
                 current_node.next = current_node.next.next
                 return
             current_node = current_node.next
 
     def deleteHead(self):
-        if self.head is None:
+        if self.head == None:
             return
 
         self.head = self.head.next 

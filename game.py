@@ -98,7 +98,7 @@ class Game:
 
         # update tiles
         tile = self.plantedTiles.head
-        while tile is not None:
+        while tile != None:
             index = tile.data
             (state, time, _) = self.tiles[index]
             if (state == config.readyTile):
@@ -119,12 +119,14 @@ class Game:
         self.screen.blit(self.tilesSurface, self.cameraPos)
 
         if (self.action != None and self.selectorInRange and self.ui.hoveredButton == None):
-            sx, sy = utils.worldToScreen(self.selected)
-            tilePos = (sx + self.cameraPos[0], sy + self.cameraPos[1])
-            if (self.actionAllowed):
-                self.screen.blit(self.tileSelected, tilePos)
-            else:
-                self.screen.blit(self.tileSelectedRed, tilePos)            
+            index = utils.worldToIndex(self.selected)
+            if (index != self.lastChangedTile):
+                sx, sy = utils.worldToScreen(self.selected)
+                tilePos = (sx + self.cameraPos[0], sy + self.cameraPos[1])
+                if (self.actionAllowed):
+                    self.screen.blit(self.tileSelected, tilePos)
+                else:
+                    self.screen.blit(self.tileSelectedRed, tilePos)            
 
         # draw harvest indicators
         # tile = self.readyToHarvestTiles.head
@@ -162,7 +164,7 @@ class Game:
             self.lastChangedTile = None
             x, y = self.selected
             if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):                
-                index = y * config.worldSize[0] + x
+                index = utils.worldToIndex(self.selected)
                 state, _, worker = self.tiles[index]
                 allowed = False
                 if (worker != None):
