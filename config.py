@@ -21,7 +21,7 @@ plantedTile = ploughedTile + 1
 readyTile = plantedTile + 2
 stoneTile = readyTile + 1
 
-coins = 30
+coins = 3
 ploughCost = 1
 plantCost = 2
 waterCost = 5

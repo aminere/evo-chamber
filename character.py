@@ -37,40 +37,34 @@ class Character:
         # self.moveQueue = None
 
     def update(self, dt):
+        game = singletons._game
         if (self.state == State.GOING_TO_WORK):
             arrived = self.updateMotion(dt)
             if (arrived):
                 self.state = State.WORKING
-        elif self.state == State.WORKING:
-            game = singletons._game
+                game.wipTiles.delete(self.actionTile)
+        elif self.state == State.WORKING:            
+            tile = game.tiles[self.actionTile]
             if (self.action == 'plough'):
-                game.tiles[self.actionTile] = (config.ploughedTile, 0, None)
-                game.updateCoins(-config.ploughCost)
-                game.redrawTiles(self.actionTile)
-                game.lastChangedTile = self.actionTile
+                tile.state = config.ploughedTile
+                game.redrawTiles(self.actionTile)                
             elif (self.action == 'plant'):
-                game.tiles[self.actionTile] = (config.plantedTile, 0, None)
-                game.updateCoins(-config.plantCost)
+                tile.state = config.plantedTile
                 game.redrawTiles(self.actionTile)             
                 game.plantedTiles.append(self.actionTile)
-                game.lastChangedTile = self.actionTile
             elif (self.action == 'water'):
-                tileState, _, _ = game.tiles[self.actionTile]
-                game.tiles[self.actionTile] = tileState, config.growDuration, None
-                game.updateCoins(-config.waterCost)
-                game.lastChangedTile = self.actionTile
+                tile.time = config.growDuration
             elif (self.action == 'harvest'):
-                game.tiles[self.actionTile] = (config.stoneTile, 0, None)
+                tile.state = config.stoneTile
                 game.updateCoins(config.harvestGain)
-                game.redrawTiles(self.actionTile)             
-                game.plantedTiles.delete(self.actionTile)
-                game.lastChangedTile = self.actionTile
-            elif (self.action == 'pick'):
-                game.tiles[self.actionTile] = (config.rawTile, 0, None)
-                game.updateCoins(-config.pickCost)
                 game.redrawTiles(self.actionTile)
-                game.lastChangedTile = self.actionTile                
-                        
+                game.plantedTiles.delete(self.actionTile)
+            elif (self.action == 'pick'):
+                tile.state = config.rawTile
+                game.redrawTiles(self.actionTile)
+
+            tile.action = None
+
             if (self.actionQueue.head != None):
                 self.state = State.IDLE
             else:
@@ -133,7 +127,6 @@ class Character:
 
     def queueAction(self, action, tileIndex):
         self.actionQueue.append((action, tileIndex))
-        pass
 
     def updateMotion(self, dt):
         self.motionPosition = utils.lerp2d_InOutCubic(self.source, self.destination, self.interpolator)

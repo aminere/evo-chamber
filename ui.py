@@ -20,8 +20,8 @@ class UI:
             "plough",
             "plant",
             "water",
-            "harvest",
-            "pick"
+            "pick",
+            "harvest"
         ]
         self.buttons = []
 
