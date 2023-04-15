@@ -57,6 +57,7 @@ class Character:
                     tile.state = config.stoneTile
                     game.redrawTiles(self.actionTile)
                     game.fireTiles.delete(self.actionTile)
+                    game.plantedTiles.delete(self.actionTile)
                 else:
                     tile.time = config.growDuration
             elif (self.action == 'harvest'):
