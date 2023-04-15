@@ -22,11 +22,12 @@ readyTile = plantedTile + 2
 fireTile = readyTile + 1
 stoneTile = fireTile + 1
 
-coins = 30
+coins = 3
 ploughCost = 1
 plantCost = 2
 waterCost = 5
 pickCost = 2
+workerCost = 10
 harvestGain = 20
 growDuration = 5
 harvestDuration = 2

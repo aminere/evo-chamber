@@ -21,7 +21,8 @@ class UI:
             "plant",
             "water",
             "pick",
-            "harvest"
+            "worker"
+            # "harvest"
         ]
         self.buttons = []
 

@@ -65,6 +65,7 @@ class Character:
                 game.updateCoins(config.harvestGain)
                 game.redrawTiles(self.actionTile)
                 game.plantedTiles.delete(self.actionTile)
+                game.fireTiles.delete(self.actionTile)
             elif (self.action == 'pick'):
                 tile.state = config.rawTile
                 game.redrawTiles(self.actionTile)

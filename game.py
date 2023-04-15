@@ -109,7 +109,7 @@ class Game:
         while plantedTile is not None:
             index = plantedTile.data
             tile = self.tiles[index]            
-            if (tile.state == config.readyTile):
+            if (tile.state == config.readyTile and tile.action == None):
                 tile.time += self.dt
                 if (tile.time >= config.growDuration):
                     tile.time = 0
@@ -143,16 +143,20 @@ class Game:
             index = fireTile.data
             pos = utils.indexToWorld(index)
             sx, sy = utils.worldToScreen(pos)
-            self.screen.blit(self.fire1, (sx + self.cameraPos[0], sy + self.cameraPos[1]))
+            ox = config.tileSize[0] // 2 - self.fire1.get_width() // 2
+            oy = -76
+            self.screen.blit(self.fire1, (sx + self.cameraPos[0] + ox, sy + self.cameraPos[1] + oy))
             fireTile = fireTile.next
 
-        if (self.action != None and self.selectorInRange and self.ui.hoveredButton == None):
+        if (self.selectorInRange and self.ui.hoveredButton == None):
             sx, sy = utils.worldToScreen(self.selected)
             index = utils.worldToIndex(self.selected)
-            if (index != self.lastChangedTile):
-                tile = self.tiles[index]
+            tile = self.tiles[index]
+            tilePos = (sx + self.cameraPos[0], sy + self.cameraPos[1])
+            if (tile.state == config.readyTile):
+                self.screen.blit(self.tileSelected, tilePos)
+            elif (self.action != None and index != self.lastChangedTile):
                 if (tile.worker == None and tile.action == None):
-                    tilePos = (sx + self.cameraPos[0], sy + self.cameraPos[1])
                     if (self.cantAfford):
                         self.screen.blit(self.tileNoCoins, tilePos)
                     elif (self.actionAllowed):
@@ -202,14 +206,16 @@ class Game:
                 self.cantAfford = False
                 if (tile.worker != None or tile.action != None):
                     pass
+                elif tile.state == config.readyTile:
+                    pass
                 elif (self.action == "plough"):
                     self.actionAllowed = tile.state == config.rawTile
                 elif (self.action == "plant"):
                     self.actionAllowed = tile.state == config.ploughedTile
                 elif (self.action == "water"):
                     self.actionAllowed = (tile.state >= config.plantedTile and tile.state < config.readyTile) or tile.state == config.fireTile
-                elif (self.action == "harvest"):
-                    self.actionAllowed = tile.state == config.readyTile
+                # elif (self.action == "harvest"):
+                    # self.actionAllowed = tile.state == config.readyTile
                 elif (self.action == "pick"):
                     self.actionAllowed = tile.state == config.stoneTile
                 self.selectorInRange = True
@@ -231,12 +237,23 @@ class Game:
             
             if (self.ui.hoveredButton != None):
                 return
+            
+            if not self.selectorInRange:
+                return
 
-            if (self.action != None and self.actionAllowed):
-                index = utils.worldToIndex(self.selected)
-                tile = self.tiles[index]                                
+            index = utils.worldToIndex(self.selected)
+            tile = self.tiles[index]
+            readyToHarvest = tile.state == config.readyTile
+            if (self.action != None and self.actionAllowed) or readyToHarvest:
                 if (tile.action == None and tile.worker == None):
-                    if self.canAfford(self.action):
+                    if readyToHarvest:
+                        closestWorker = self.getClosestWorker(self.selected)
+                        closestWorker.queueAction("harvest", index)
+                        tile.action = "harvest"
+                        self.actionAllowed = False
+                        self.lastChangedTile = index
+                        self.wipTiles.append(index)
+                    elif self.canAfford(self.action):
                         closestWorker = self.getClosestWorker(self.selected)
                         closestWorker.queueAction(self.action, index)
                         tile.action = self.action
@@ -298,13 +315,15 @@ class Game:
         return closestWorker
     
     def canAfford(self, action):
-        if (action == 'plough' and self.coins >= config.ploughCost):
-            return True
-        elif (action == 'plant' and self.coins >= config.plantCost):
-            return True
-        elif (action == 'water' and self.coins >= config.waterCost):
-            return True
-        elif (action == 'pick' and self.coins >= config.pickCost):
-            return True
+        if (action == 'plough'):
+            return self.coins >= config.ploughCost
+        elif (action == 'plant'):
+            return self.coins >= config.plantCost
+        elif (action == 'water'):
+            return self.coins >= config.waterCost
+        elif (action == 'pick'):
+            return self.coins >= config.pickCost
+        elif action == "worker":
+            return self.coins >= config.workerCost
         return True
 
