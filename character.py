@@ -53,7 +53,12 @@ class Character:
                 game.redrawTiles(self.actionTile)             
                 game.plantedTiles.append(self.actionTile)
             elif (self.action == 'water'):
-                tile.time = config.growDuration
+                if tile.state == config.fireTile:
+                    tile.state = config.stoneTile
+                    game.redrawTiles(self.actionTile)
+                    game.fireTiles.delete(self.actionTile)
+                else:
+                    tile.time = config.growDuration
             elif (self.action == 'harvest'):
                 tile.state = config.stoneTile
                 game.updateCoins(config.harvestGain)
@@ -78,7 +83,6 @@ class Character:
         elif (self.state == State.IDLE):
             if (self.actionQueue.head != None):
                 action, tileIndex = self.actionQueue.head.data
-                print(f'Action: {action}, tileIndex: {tileIndex}')
                 self.moveTo(tileIndex)
                 self.action = action
                 self.actionTile = tileIndex

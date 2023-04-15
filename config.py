@@ -19,15 +19,17 @@ rawTile = 0
 ploughedTile = rawTile + 1
 plantedTile = ploughedTile + 1
 readyTile = plantedTile + 2
-stoneTile = readyTile + 1
+fireTile = readyTile + 1
+stoneTile = fireTile + 1
 
-coins = 3
+coins = 30
 ploughCost = 1
 plantCost = 2
 waterCost = 5
 pickCost = 2
 harvestGain = 20
-growDuration = 10
+growDuration = 5
+harvestDuration = 2
 workerSpeed = 0.7
 
 firstWorkerPos = (0, worldSize[1] // 2 - 1)

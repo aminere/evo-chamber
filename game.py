@@ -16,6 +16,7 @@ tileSprites = [
     pg.image.load('images/tile-ground2.png'), # planted
     pg.image.load('images/tile-ground3.png'), # planted
     pg.image.load('images/tile-ground4.png'), # ready
+    pg.image.load('images/tile-ground4.png'), # on fire
     pg.image.load('images/tile-stone.png'), # stone
 ]
 
@@ -32,6 +33,7 @@ class Game:
         self.workerTile = pg.image.load('images/tile-worker.png')
         self.tileSelectedRed = pg.image.load('images/tile-selected-red.png')
         self.tileWip = pg.image.load('images/tile-wip.png')
+        self.fire1 = pg.image.load('images/fire1.png')
         self.tileNoCoins = pg.image.load('images/tile-no-coins.png')
         # self.tileSelectedRed.set_alpha(128)
         # self.harvestIndicator = pg.image.load('images/ui/harvest-indicator.png')        
@@ -57,6 +59,7 @@ class Game:
         self.coins = config.coins
         self.plantedTiles = linkedlist.LinkedList()
         self.wipTiles = linkedlist.LinkedList()
+        self.fireTiles = linkedlist.LinkedList()
         self.lastChangedTile = None
         self.cantAfford = False
         # self.readyToHarvestTiles = linkedlist.LinkedList()
@@ -105,18 +108,20 @@ class Game:
         plantedTile = self.plantedTiles.head
         while plantedTile is not None:
             index = plantedTile.data
-            tile = self.tiles[index]
+            tile = self.tiles[index]            
             if (tile.state == config.readyTile):
-                plantedTile = plantedTile.next
-                continue            
-            tile.time += self.dt
-            if (tile.time >= config.growDuration):
-                newState = tile.state + 1
-                tile.state = newState
-                tile.time = 0
-                self.redrawTiles(index)
-                # if (newState == readyTile):
-                    # self.readyToHarvestTiles.append(index)
+                tile.time += self.dt
+                if (tile.time >= config.growDuration):
+                    tile.time = 0
+                    tile.state = config.fireTile
+                    self.fireTiles.append(index)
+            elif tile.state < config.readyTile:
+                tile.time += self.dt
+                if (tile.time >= config.growDuration):
+                    tile.time = 0
+                    newState = tile.state + 1
+                    tile.state = newState                    
+                    self.redrawTiles(index)                    
             plantedTile = plantedTile.next
 
     def draw(self):        
@@ -131,6 +136,15 @@ class Game:
             sx, sy = utils.worldToScreen(pos)
             self.screen.blit(self.tileWip, (sx + self.cameraPos[0], sy + self.cameraPos[1]))
             wipTile = wipTile.next
+
+        # draw fire tiles
+        fireTile = self.fireTiles.head
+        while fireTile is not None:
+            index = fireTile.data
+            pos = utils.indexToWorld(index)
+            sx, sy = utils.worldToScreen(pos)
+            self.screen.blit(self.fire1, (sx + self.cameraPos[0], sy + self.cameraPos[1]))
+            fireTile = fireTile.next
 
         if (self.action != None and self.selectorInRange and self.ui.hoveredButton == None):
             sx, sy = utils.worldToScreen(self.selected)
@@ -193,7 +207,7 @@ class Game:
                 elif (self.action == "plant"):
                     self.actionAllowed = tile.state == config.ploughedTile
                 elif (self.action == "water"):
-                    self.actionAllowed = tile.state >= config.plantedTile and tile.state < config.readyTile
+                    self.actionAllowed = (tile.state >= config.plantedTile and tile.state < config.readyTile) or tile.state == config.fireTile
                 elif (self.action == "harvest"):
                     self.actionAllowed = tile.state == config.readyTile
                 elif (self.action == "pick"):
