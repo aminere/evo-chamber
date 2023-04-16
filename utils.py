@@ -19,6 +19,14 @@ def worldToIndex(position):
     x, y = position
     return x + y * config.mapSize[0]
 
+def worldToArea(position):
+    x, y = position
+    return x // config.mapSize[0], y // config.mapSize[1]
+
+def worldToLocal(area, worldPos):
+    x, y = worldPos
+    return x - area[0] * config.mapSize[0], y - area[1] * config.mapSize[1]
+
 def indexToWorld(index):
     y = math.floor(index / config.mapSize[0])
     x = index - y * config.mapSize[0]

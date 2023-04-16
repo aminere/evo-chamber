@@ -181,12 +181,9 @@ class Game:
 
         if (self.selectorInRange and self.ui.hoveredButton == None):
             sx, sy = utils.worldToScreen(self.selected)
-            index = utils.worldToIndex(self.selected)
-            # TODO convert to local index
-            # localX, localY = x - worldX * config.mapSize[0], y - worldY * config.mapSize[1]
-            # print(f"localX: {localX}, localY: {localY}")                    
-            # index = localY * config.mapSize[0] + localX
-            # self.selected = localX, localY
+            area = utils.worldToArea(self.selected)
+            localPos = utils.worldToLocal(area, self.selected)
+            index = utils.worldToIndex(localPos)
             tile = self.tiles[index]
             tilePos = (sx - self.cameraPos[0], sy - self.cameraPos[1])
             if (tile.state == config.readyTile):
@@ -250,20 +247,19 @@ class Game:
             self.selected = selected
             x, y = self.selected
 
-            worldX, worldY = x // config.mapSize[0], y // config.mapSize[1]
+            areaX, areaY = x // config.mapSize[0], y // config.mapSize[1]
             # print(f"worldX: {worldX}, worldY: {worldY}")
-            if (worldX < 0 or worldY < 0 or worldX >= config.maxAreasPerRow or worldY >= config.maxAreasPerRow):
+            if (areaX < 0 or areaY < 0 or areaX >= config.maxAreasPerRow or areaY >= config.maxAreasPerRow):
                 self.selectorInRange = False
             else:
-                area = self.areas[worldY][worldX]
+                area = self.areas[areaY][areaX]
                 if (area == None):
                     self.selectorInRange = False
                 else:
                     self.selectorInRange = True
-                    localX, localY = x - worldX * config.mapSize[0], y - worldY * config.mapSize[1]
-                    print(f"localX: {localX}, localY: {localY}")                    
+                    localX, localY = utils.worldToLocal((areaX, areaY), self.selected)
+                    # print(f"localX: {localX}, localY: {localY}")                    
                     index = localY * config.mapSize[0] + localX
-                    # self.selected = localX, localY
                     tile = self.tiles[index]
                     self.lastChangedTile = None
                     self.actionAllowed = True
