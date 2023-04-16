@@ -38,7 +38,7 @@ class Game:
         # self.tileSelectedRed.set_alpha(128)
         # self.harvestIndicator = pg.image.load('images/ui/harvest-indicator.png')        
 
-        self.tilesSurface = pg.Surface(config.mapSize)
+        self.tilesSurface = pg.Surface(config.mapSize, pg.SRCALPHA)
 
         tileCount = config.worldSize[0] * config.worldSize[1]
         self.tiles = []
@@ -66,7 +66,7 @@ class Game:
         self.updateCoins(0)
 
         # generate map
-        self.tilesSurface.fill(config.bgColor)
+        # self.tilesSurface.fill((255, 0, 0))
         for y in range(config.worldSize[1]):
             for x in range(config.worldSize[0]):
                 sx, sy = utils.worldToScreen((x, y))
@@ -76,28 +76,38 @@ class Game:
                 else:
                     self.tilesSurface.blit(tileSprites[0], (sx, sy))
 
+        self.tilesSurface2 = pg.Surface(config.mapSize, pg.SRCALPHA)
+        for y in range(config.worldSize[1]):
+            for x in range(config.worldSize[0]):
+                sx, sy = utils.worldToScreen((x, y))
+                tile = self.tiles[utils.worldToIndex((x, y))]
+                if (tile.worker != None):
+                    self.tilesSurface2.blit(self.workerTile, (sx, sy))
+                else:
+                    self.tilesSurface2.blit(tileSprites[0], (sx, sy))
+
     def update(self):
 
         for worker in self.workers:
             worker.update(self.dt)        
 
         # camera
-        margin = 80
-        mouseX, mouseY = pg.mouse.get_pos()
-        bottomEdge = config.screenSize[1] - 50
-        if (self.ui.hoveredButton == None):
-            if (mouseX > config.screenSize[0] - config.scrollMargin):
-                self.cameraPos = (self.cameraPos[0] - config.scrollSpeed * self.dt, self.cameraPos[1])
-                self.cameraPos = (max(self.cameraPos[0], config.screenSize[0] - self.tilesSurface.get_width() - margin), self.cameraPos[1])
-            elif (mouseX < config.scrollMargin):
-                self.cameraPos = (self.cameraPos[0] + config.scrollSpeed * self.dt, self.cameraPos[1])
-                self.cameraPos = (min(self.cameraPos[0], margin), self.cameraPos[1])            
-            if (mouseY > bottomEdge):
-                self.cameraPos = (self.cameraPos[0], self.cameraPos[1] - config.scrollSpeed * self.dt)
-                self.cameraPos = (self.cameraPos[0], max(self.cameraPos[1], bottomEdge - self.tilesSurface.get_height() - margin))
-            elif (mouseY < config.scrollMargin):
-                self.cameraPos = (self.cameraPos[0], self.cameraPos[1] + config.scrollSpeed * self.dt)    
-                self.cameraPos = (self.cameraPos[0], min(self.cameraPos[1], margin))
+        # margin = 80
+        # mouseX, mouseY = pg.mouse.get_pos()
+        # bottomEdge = config.screenSize[1] - 50
+        # if (self.ui.hoveredButton == None):
+        #     if (mouseX > config.screenSize[0] - config.scrollMargin):
+        #         self.cameraPos = (self.cameraPos[0] - config.scrollSpeed * self.dt, self.cameraPos[1])
+        #         self.cameraPos = (max(self.cameraPos[0], config.screenSize[0] - self.tilesSurface.get_width() - margin), self.cameraPos[1])
+        #     elif (mouseX < config.scrollMargin):
+        #         self.cameraPos = (self.cameraPos[0] + config.scrollSpeed * self.dt, self.cameraPos[1])
+        #         self.cameraPos = (min(self.cameraPos[0], margin), self.cameraPos[1])            
+        #     if (mouseY > bottomEdge):
+        #         self.cameraPos = (self.cameraPos[0], self.cameraPos[1] - config.scrollSpeed * self.dt)
+        #         self.cameraPos = (self.cameraPos[0], max(self.cameraPos[1], bottomEdge - self.tilesSurface.get_height() - margin))
+        #     elif (mouseY < config.scrollMargin):
+        #         self.cameraPos = (self.cameraPos[0], self.cameraPos[1] + config.scrollSpeed * self.dt)    
+        #         self.cameraPos = (self.cameraPos[0], min(self.cameraPos[1], margin))
 
         self.dt = self.clock.tick(config.fps) / 1000
         pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}")
@@ -126,7 +136,12 @@ class Game:
 
     def draw(self):        
         self.screen.fill(config.bgColor)
+
+        self.screen.blit(self.tilesSurface2, utils.areaToScreen((0, -1)))
         self.screen.blit(self.tilesSurface, self.cameraPos)
+        self.screen.blit(self.tilesSurface2, utils.areaToScreen((1, -1)))
+        self.screen.blit(self.tilesSurface2, utils.areaToScreen((1, 0)))
+
 
         # draw wip tiles
         wipTile = self.wipTiles.head
@@ -136,17 +151,6 @@ class Game:
             sx, sy = utils.worldToScreen(pos)
             self.screen.blit(self.tileWip, (sx + self.cameraPos[0], sy + self.cameraPos[1]))
             wipTile = wipTile.next
-
-        # draw fire tiles
-        fireTile = self.fireTiles.head
-        while fireTile is not None:
-            index = fireTile.data
-            pos = utils.indexToWorld(index)
-            sx, sy = utils.worldToScreen(pos)
-            ox = config.tileSize[0] // 2 - self.fire1.get_width() // 2
-            oy = -76
-            self.screen.blit(self.fire1, (sx + self.cameraPos[0] + ox, sy + self.cameraPos[1] + oy))
-            fireTile = fireTile.next
 
         if (self.selectorInRange and self.ui.hoveredButton == None):
             sx, sy = utils.worldToScreen(self.selected)
@@ -163,6 +167,21 @@ class Game:
                         self.screen.blit(self.tileSelected, tilePos)
                     else:
                         self.screen.blit(self.tileSelectedRed, tilePos)
+        else:
+            sx, sy = utils.worldToScreen(self.selected)
+            tilePos = (sx + self.cameraPos[0], sy + self.cameraPos[1])
+            self.screen.blit(self.tileSelected, tilePos)
+
+        # draw fire tiles
+        fireTile = self.fireTiles.head
+        while fireTile is not None:
+            index = fireTile.data
+            pos = utils.indexToWorld(index)
+            sx, sy = utils.worldToScreen(pos)
+            ox = config.tileSize[0] // 2 - self.fire1.get_width() // 2
+            oy = -76
+            self.screen.blit(self.fire1, (sx + self.cameraPos[0] + ox, sy + self.cameraPos[1] + oy))
+            fireTile = fireTile.next
 
         # draw harvest indicators
         # tile = self.readyToHarvestTiles.head
@@ -198,6 +217,10 @@ class Game:
         if (selected != self.selected):
             self.selected = selected
             x, y = self.selected
+
+            worldX, worldY = x // config.worldSize[0], y // config.worldSize[1]
+            print(f"worldX: {worldX}, worldY: {worldY}")
+
             if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):                
                 index = y * config.worldSize[0] + x
                 tile = self.tiles[index]
@@ -218,6 +241,8 @@ class Game:
                     # self.actionAllowed = tile.state == config.readyTile
                 elif (self.action == "pick"):
                     self.actionAllowed = tile.state == config.stoneTile
+                elif (self.action == "worker"):
+                    self.actionAllowed = tile.state == config.rawTile
                 self.selectorInRange = True
             else:
                 self.selectorInRange = False
@@ -254,16 +279,20 @@ class Game:
                         self.lastChangedTile = index
                         self.wipTiles.append(index)
                     elif self.canAfford(self.action):
-                        closestWorker = self.getClosestWorker(self.selected)
-                        closestWorker.queueAction(self.action, index)
-                        tile.action = self.action
-                        self.actionAllowed = False
-                        self.lastChangedTile = index
-                        self.wipTiles.append(index)
-                        if (self.action == 'plough'): self.updateCoins(-config.ploughCost)            
-                        elif (self.action == 'plant'): self.updateCoins(-config.plantCost)
-                        elif (self.action == 'water'): self.updateCoins(-config.waterCost)
-                        elif (self.action == 'pick'): self.updateCoins(-config.pickCost)
+                        if (self.action == "worker"):
+                            self.addWorker(self.selected)
+                            self.redrawTiles(index)
+                        else:
+                            closestWorker = self.getClosestWorker(self.selected)
+                            closestWorker.queueAction(self.action, index)
+                            tile.action = self.action
+                            self.actionAllowed = False
+                            self.lastChangedTile = index
+                            self.wipTiles.append(index)
+                            if (self.action == 'plough'): self.updateCoins(-config.ploughCost)            
+                            elif (self.action == 'plant'): self.updateCoins(-config.plantCost)
+                            elif (self.action == 'water'): self.updateCoins(-config.waterCost)
+                            elif (self.action == 'pick'): self.updateCoins(-config.pickCost)
                     else:
                         self.cantAfford = True
 
@@ -282,7 +311,8 @@ class Game:
             if not self.tryUpdateButton(button, 'plough', config.ploughCost):
                 if not self.tryUpdateButton(button, 'plant', config.plantCost):
                     if not self.tryUpdateButton(button, 'water', config.waterCost):
-                        self.tryUpdateButton(button, 'pick', config.pickCost)
+                        if not self.tryUpdateButton(button, 'pick', config.pickCost):
+                            self.tryUpdateButton(button, 'worker', config.workerCost)
                     
     def redrawTiles(self, index):
         y = math.floor(index / config.worldSize[0])

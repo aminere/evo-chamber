@@ -3,7 +3,9 @@ import config
 import math
 
 def worldToScreen(position):
-    x, y = map(lambda i: int(i), position)
+    #x, y = map(lambda i: int(i), position)
+    # x, y = int(position[0]), int(position[1])
+    x, y = position
     return (config.tileSize[0] // 2 * (x - y)) + config.origin[0], (config.tileSize[1] // 2 * (x + y)) + config.origin[1]
 
 def screenToWorld(position, cameraPos):
@@ -36,3 +38,7 @@ def lerp2d_InOutCubic(a, b, t):
     
 def distSquared(a, b):
     return ((a[0] - b[0])**2 + (a[1] - b[1])**2)
+
+def areaToScreen(area):
+    x, y = area
+    return (config.mapSize[0] // 2 * (x - y)), (config.mapSize[1] // 2 * (x + y))
