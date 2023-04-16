@@ -51,7 +51,11 @@ class Game:
         # first area
         areaPos = utils.areaToScreen(self.startingAreaPos)
         self.areaBounds = ((areaPos[0], areaPos[0] + config.mapSizePixels[0]), (areaPos[1], areaPos[1] + config.mapSizePixels[1]))
-        self.addArea(self.startingAreaPos)
+        firstArea = self.addArea(self.startingAreaPos)
+        # first worker
+        firstArea.addWorker(config.firstWorkerPos)
+        workerIndex = utils.localToIndex(config.firstWorkerPos)
+        firstArea.redrawTiles(workerIndex)
 
         # center area in view
         self.cameraPos = (areaPos[0] - (config.screenSize[0] - config.mapSizePixels[0]) // 2, areaPos[1] - (config.screenSize[1] - config.mapSizePixels[1]) // 2)
@@ -62,9 +66,9 @@ class Game:
         self.activeAreas.append(area)
 
         # first worker
-        area.addWorker(config.firstWorkerPos)
-        workerIndex = utils.localToIndex(config.firstWorkerPos)
-        area.redrawTiles(workerIndex)
+        # area.addWorker(config.firstWorkerPos)
+        # workerIndex = utils.localToIndex(config.firstWorkerPos)
+        # area.redrawTiles(workerIndex)
 
         # update bounds
         xBounds, yBounds = self.areaBounds
