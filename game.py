@@ -49,11 +49,9 @@ class Game:
             self.areas.append([])
         self.activeAreas = []
         
-        firstArea = self.addArea(self.startingAreaPos)        
-        firstArea.addWorker(config.firstWorkerPos)
-        workerIndex = utils.localToIndex(config.firstWorkerPos)
-        firstArea.redrawTiles(workerIndex)
-        
+        # first area
+        self.addArea(self.startingAreaPos)
+
         # center area in view
         areaPos = utils.areaToScreen(self.startingAreaPos)
         self.cameraPos = (areaPos[0] - (config.screenSize[0] - self.totalMapSize[0]) // 2, areaPos[1] - (config.screenSize[1] - self.totalMapSize[1]) // 2)
@@ -62,6 +60,11 @@ class Game:
         area = Area.Area(pos)
         self.areas[pos[1]][pos[0]] = area
         self.activeAreas.append(area)
+
+        # first worker
+        area.addWorker(config.firstWorkerPos)
+        workerIndex = utils.localToIndex(config.firstWorkerPos)
+        area.redrawTiles(workerIndex)
         return area
 
     def update(self):
@@ -93,14 +96,13 @@ class Game:
     def draw(self):        
         self.screen.fill(config.bgColor)
 
-        for area in self.activeAreas:
-            area.draw(self.screen, self.cameraPos)
-
-        # for y in range(config.maxAreasPerRow):
-        #     for x in range(config.maxAreasPerRow):
-        #         area = self.areas[y][x]
-        #         if (area != None):
-        #             pass        
+        # for area in self.activeAreas:
+        #     area.draw(self.screen, self.cameraPos)
+        for y in range(config.maxAreasPerRow):
+            for x in range(config.maxAreasPerRow):
+                area = self.areas[y][x]
+                if (area != None):
+                    area.draw(self.screen, self.cameraPos)        
 
         if (self.selectorInRange and self.ui.hoveredButton == None):
             sx, sy = utils.worldToScreen(self.selected)
@@ -120,10 +122,10 @@ class Game:
                         self.screen.blit(self.tileSelected, tilePos)
                     else:
                         self.screen.blit(self.tileSelectedRed, tilePos)
-        else:
-            sx, sy = utils.worldToScreen(self.selected)
-            tilePos = (sx - self.cameraPos[0], sy - self.cameraPos[1])
-            self.screen.blit(self.tileSelected, tilePos)        
+        # else:
+        #     sx, sy = utils.worldToScreen(self.selected)
+        #     tilePos = (sx - self.cameraPos[0], sy - self.cameraPos[1])
+        #     self.screen.blit(self.tileSelected, tilePos)        
 
         # draw harvest indicators
         # tile = self.readyToHarvestTiles.head
@@ -206,6 +208,14 @@ class Game:
                 return
             
             if not self.selectorInRange:
+                # todo remove, test code
+                areaX, areaY = utils.worldToArea(self.selected)
+                if (areaX < 0 or areaY < 0 or areaX >= config.maxAreasPerRow or areaY >= config.maxAreasPerRow):
+                    pass
+                else:
+                    area = self.areas[areaY][areaX]
+                    if (area == None):
+                        self.addArea((areaX, areaY))                        
                 return
 
             areaX, areaY = utils.worldToArea(self.selected)
