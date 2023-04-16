@@ -15,7 +15,7 @@ def screenToWorld(position, cameraPos):
     tx, ty = lx % config.tileSize[0], ly % config.tileSize[1]    
     return (cx + cy, cy - cx), tx, ty
 
-def worldToIndex(position):
+def localToIndex(position):
     x, y = position
     return x + y * config.mapSize[0]
 
@@ -27,7 +27,7 @@ def worldToLocal(area, worldPos):
     x, y = worldPos
     return x - area[0] * config.mapSize[0], y - area[1] * config.mapSize[1]
 
-def indexToWorld(index):
+def indexToLocal(index):
     y = math.floor(index / config.mapSize[0])
     x = index - y * config.mapSize[0]
     return x, y
