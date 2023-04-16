@@ -24,9 +24,9 @@ class Game:
     def __init__(self):
         self.screen = pg.display.set_mode(size=config.screenSize)
         self.clock = pg.time.Clock()
-        self.dt = 0.0
-        self.cameraPos = 0.0, 0.0
+        self.dt = 0.0        
         self.selected = -1, -1
+        self.totalMapSize = (config.mapSizePixels[0], config.mapSizePixels[1])        
 
         self.tileMask = pg.image.load('images/tile-mask.png')
         self.tileSelected = pg.image.load('images/tile-selected.png')
@@ -36,20 +36,12 @@ class Game:
         self.fire1 = pg.image.load('images/fire1.png')
         self.tileNoCoins = pg.image.load('images/tile-no-coins.png')
         # self.tileSelectedRed.set_alpha(128)
-        # self.harvestIndicator = pg.image.load('images/ui/harvest-indicator.png')        
-
-        self.tilesSurface = pg.Surface(config.mapSize, pg.SRCALPHA)
-
-        tileCount = config.worldSize[0] * config.worldSize[1]
-        self.tiles = []
-        for _ in range(tileCount):
-            self.tiles.append(Tile.Tile())
-        self.origin = (config.worldSize[0] - 1) * config.tileSize[0] // 2, 0
-
-        # start with one worker        
-        self.workers = []
-        self.addWorker(config.firstWorkerPos)
-        # self.addWorker((5, 5))
+        # self.harvestIndicator = pg.image.load('images/ui/harvest-indicator.png')
+        #         
+        # self.tilesSurface = pg.Surface(config.surfaceSize, pg.SRCALPHA)
+        # self.tiles = []
+        # for _ in range(tileCount):
+        #     self.tiles.append(Tile.Tile())
 
         self.ui = ui.UI()
         self.action = "plough"
@@ -65,26 +57,55 @@ class Game:
         # self.readyToHarvestTiles = linkedlist.LinkedList()
         self.updateCoins(0)
 
+        # initialize areas
+        maxAreasPerRow = config.maxAreasPerRow
+        self.startingAreaPos = (math.floor(maxAreasPerRow / 2), math.floor(maxAreasPerRow / 2))
+        self.areas = [[]]
+        for i in range(maxAreasPerRow):
+            row = self.areas[i]
+            for _ in range(maxAreasPerRow):
+                row.append(None)
+            self.areas.append([])
+
         # generate map
         # self.tilesSurface.fill((255, 0, 0))
-        for y in range(config.worldSize[1]):
-            for x in range(config.worldSize[0]):
+        tilesSurface = pg.Surface(config.surfaceSize, pg.SRCALPHA)
+        self.tiles = []
+        for _ in range(config.tileCount):
+            self.tiles.append(Tile.Tile())
+        for y in range(config.mapSize[1]):
+            for x in range(config.mapSize[0]):
                 sx, sy = utils.worldToScreen((x, y))
                 tile = self.tiles[utils.worldToIndex((x, y))]
                 if (tile.worker != None):
-                    self.tilesSurface.blit(self.workerTile, (sx, sy))
+                    tilesSurface.blit(self.workerTile, (sx, sy))
                 else:
-                    self.tilesSurface.blit(tileSprites[0], (sx, sy))
+                    tilesSurface.blit(tileSprites[0], (sx, sy))
 
-        self.tilesSurface2 = pg.Surface(config.mapSize, pg.SRCALPHA)
-        for y in range(config.worldSize[1]):
-            for x in range(config.worldSize[0]):
-                sx, sy = utils.worldToScreen((x, y))
-                tile = self.tiles[utils.worldToIndex((x, y))]
-                if (tile.worker != None):
-                    self.tilesSurface2.blit(self.workerTile, (sx, sy))
-                else:
-                    self.tilesSurface2.blit(tileSprites[0], (sx, sy))
+        self.areas[self.startingAreaPos[1]][self.startingAreaPos[0]] = tilesSurface
+        self.areas[0][0] = tilesSurface
+        self.areas[2][1] = tilesSurface
+        self.areas[2][2] = tilesSurface
+        areaPos = utils.areaToScreen(self.startingAreaPos)
+        self.cameraPos = (areaPos[0] - (config.screenSize[0] - self.totalMapSize[0]) // 2, areaPos[1] - (config.screenSize[1] - self.totalMapSize[1]) // 2)        
+
+        # self.tilesSurface2 = pg.Surface(config.surfaceSize, pg.SRCALPHA)
+        # for y in range(config.mapSize[1]):
+        #     for x in range(config.mapSize[0]):
+        #         sx, sy = utils.worldToScreen((x, y))
+        #         tile = self.tiles[utils.worldToIndex((x, y))]
+        #         if (tile.worker != None):
+        #             self.tilesSurface2.blit(self.workerTile, (sx, sy))
+        #         else:
+        #             self.tilesSurface2.blit(tileSprites[0], (sx, sy))
+
+        # start with one worker        
+        self.workers = []
+        self.addWorker(config.firstWorkerPos)
+        # self.addWorker((5, 5))
+
+    def addArea(self, pos):
+        pass
 
     def update(self):
 
@@ -137,11 +158,17 @@ class Game:
     def draw(self):        
         self.screen.fill(config.bgColor)
 
-        self.screen.blit(self.tilesSurface2, utils.areaToScreen((0, -1)))
-        self.screen.blit(self.tilesSurface, self.cameraPos)
-        self.screen.blit(self.tilesSurface2, utils.areaToScreen((1, -1)))
-        self.screen.blit(self.tilesSurface2, utils.areaToScreen((1, 0)))
+        for y in range(config.maxAreasPerRow):
+            for x in range(config.maxAreasPerRow):
+                area = self.areas[y][x]
+                if (area != None):
+                    sx, sy = utils.areaToScreen((x, y))
+                    self.screen.blit(area, (sx - self.cameraPos[0], sy - self.cameraPos[1]))
 
+        # self.screen.blit(self.tilesSurface2, utils.areaToScreen((0, -1)))
+        # self.screen.blit(self.areas[1][1], self.cameraPos)
+        # self.screen.blit(self.tilesSurface2, utils.areaToScreen((1, -1)))
+        # self.screen.blit(self.tilesSurface2, utils.areaToScreen((1, 0)))
 
         # draw wip tiles
         wipTile = self.wipTiles.head
@@ -155,8 +182,13 @@ class Game:
         if (self.selectorInRange and self.ui.hoveredButton == None):
             sx, sy = utils.worldToScreen(self.selected)
             index = utils.worldToIndex(self.selected)
+            # TODO convert to local index
+            # localX, localY = x - worldX * config.mapSize[0], y - worldY * config.mapSize[1]
+            # print(f"localX: {localX}, localY: {localY}")                    
+            # index = localY * config.mapSize[0] + localX
+            # self.selected = localX, localY
             tile = self.tiles[index]
-            tilePos = (sx + self.cameraPos[0], sy + self.cameraPos[1])
+            tilePos = (sx - self.cameraPos[0], sy - self.cameraPos[1])
             if (tile.state == config.readyTile):
                 self.screen.blit(self.tileSelected, tilePos)
             elif (self.action != None and index != self.lastChangedTile):
@@ -169,7 +201,7 @@ class Game:
                         self.screen.blit(self.tileSelectedRed, tilePos)
         else:
             sx, sy = utils.worldToScreen(self.selected)
-            tilePos = (sx + self.cameraPos[0], sy + self.cameraPos[1])
+            tilePos = (sx - self.cameraPos[0], sy - self.cameraPos[1])
             self.screen.blit(self.tileSelected, tilePos)
 
         # draw fire tiles
@@ -218,35 +250,41 @@ class Game:
             self.selected = selected
             x, y = self.selected
 
-            worldX, worldY = x // config.worldSize[0], y // config.worldSize[1]
-            print(f"worldX: {worldX}, worldY: {worldY}")
-
-            if (x >= 0 and y >= 0 and x < config.worldSize[0] and y < config.worldSize[1]):                
-                index = y * config.worldSize[0] + x
-                tile = self.tiles[index]
-                self.lastChangedTile = None
-                self.actionAllowed = True
-                self.cantAfford = False
-                if (tile.worker != None or tile.action != None):
-                    pass
-                elif tile.state == config.readyTile:
-                    pass
-                elif (self.action == "plough"):
-                    self.actionAllowed = tile.state == config.rawTile
-                elif (self.action == "plant"):
-                    self.actionAllowed = tile.state == config.ploughedTile
-                elif (self.action == "water"):
-                    self.actionAllowed = (tile.state >= config.plantedTile and tile.state < config.readyTile) or tile.state == config.fireTile
-                # elif (self.action == "harvest"):
-                    # self.actionAllowed = tile.state == config.readyTile
-                elif (self.action == "pick"):
-                    self.actionAllowed = tile.state == config.stoneTile
-                elif (self.action == "worker"):
-                    self.actionAllowed = tile.state == config.rawTile
-                self.selectorInRange = True
-            else:
+            worldX, worldY = x // config.mapSize[0], y // config.mapSize[1]
+            # print(f"worldX: {worldX}, worldY: {worldY}")
+            if (worldX < 0 or worldY < 0 or worldX >= config.maxAreasPerRow or worldY >= config.maxAreasPerRow):
                 self.selectorInRange = False
-
+            else:
+                area = self.areas[worldY][worldX]
+                if (area == None):
+                    self.selectorInRange = False
+                else:
+                    self.selectorInRange = True
+                    localX, localY = x - worldX * config.mapSize[0], y - worldY * config.mapSize[1]
+                    print(f"localX: {localX}, localY: {localY}")                    
+                    index = localY * config.mapSize[0] + localX
+                    # self.selected = localX, localY
+                    tile = self.tiles[index]
+                    self.lastChangedTile = None
+                    self.actionAllowed = True
+                    self.cantAfford = False
+                    if (tile.worker != None or tile.action != None):
+                        pass
+                    elif tile.state == config.readyTile:
+                        pass
+                    elif (self.action == "plough"):
+                        self.actionAllowed = tile.state == config.rawTile
+                    elif (self.action == "plant"):
+                        self.actionAllowed = tile.state == config.ploughedTile
+                    elif (self.action == "water"):
+                        self.actionAllowed = (tile.state >= config.plantedTile and tile.state < config.readyTile) or tile.state == config.fireTile
+                    # elif (self.action == "harvest"):
+                        # self.actionAllowed = tile.state == config.readyTile
+                    elif (self.action == "pick"):
+                        self.actionAllowed = tile.state == config.stoneTile
+                    elif (self.action == "worker"):
+                        self.actionAllowed = tile.state == config.rawTile                    
+           
     def onMouseUp(self, button, mousePos):
         if (button == pg.BUTTON_LEFT):
 
@@ -315,12 +353,12 @@ class Game:
                             self.tryUpdateButton(button, 'worker', config.workerCost)
                     
     def redrawTiles(self, index):
-        y = math.floor(index / config.worldSize[0])
+        y = math.floor(index / config.mapSize[0])
         startY = max(0, y - 1)
-        for _y in range(config.worldSize[1] - startY):
-            for _x in range(config.worldSize[0]):
+        for _y in range(config.mapSize[1] - startY):
+            for _x in range(config.mapSize[0]):
                 yCoord = startY + _y
-                index = yCoord * config.worldSize[0] + _x
+                index = yCoord * config.mapSize[0] + _x
                 tile = self.tiles[index]
                 if (tile.worker != None):
                     sprite = self.workerTile

@@ -10,18 +10,18 @@ def worldToScreen(position):
 
 def screenToWorld(position, cameraPos):
     x, y = position
-    lx, ly = x - config.origin[0] - int(cameraPos[0]), y - config.origin[1] - int(cameraPos[1])
+    lx, ly = x - config.origin[0] + cameraPos[0], y - config.origin[1] + cameraPos[1]
     cx, cy = lx // config.tileSize[0], ly // config.tileSize[1]
     tx, ty = lx % config.tileSize[0], ly % config.tileSize[1]    
     return (cx + cy, cy - cx), tx, ty
 
 def worldToIndex(position):
     x, y = position
-    return x + y * config.worldSize[0]
+    return x + y * config.mapSize[0]
 
 def indexToWorld(index):
-    y = math.floor(index / config.worldSize[0])
-    x = index - y * config.worldSize[0]
+    y = math.floor(index / config.mapSize[0])
+    x = index - y * config.mapSize[0]
     return x, y
 
 def lerp(a, b, t):
@@ -41,4 +41,4 @@ def distSquared(a, b):
 
 def areaToScreen(area):
     x, y = area
-    return (config.mapSize[0] // 2 * (x - y)), (config.mapSize[1] // 2 * (x + y))
+    return (config.mapSizePixels[0] // 2 * (x - y)), (config.mapSizePixels[1] // 2 * (x + y))
