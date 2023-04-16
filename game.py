@@ -17,7 +17,6 @@ class Game:
         self.clock = pg.time.Clock()
         self.dt = 0.0        
         self.selected = -1, -1
-        self.totalMapSize = (config.mapSizePixels[0], config.mapSizePixels[1])        
 
         self.tileMask = pg.image.load('images/tile-mask.png')
         self.tileSelected = pg.image.load('images/tile-selected.png')
@@ -50,11 +49,12 @@ class Game:
         self.activeAreas = []
         
         # first area
+        areaPos = utils.areaToScreen(self.startingAreaPos)
+        self.areaBounds = ((areaPos[0], areaPos[0] + config.mapSizePixels[0]), (areaPos[1], areaPos[1] + config.mapSizePixels[1]))
         self.addArea(self.startingAreaPos)
 
         # center area in view
-        areaPos = utils.areaToScreen(self.startingAreaPos)
-        self.cameraPos = (areaPos[0] - (config.screenSize[0] - self.totalMapSize[0]) // 2, areaPos[1] - (config.screenSize[1] - self.totalMapSize[1]) // 2)
+        self.cameraPos = (areaPos[0] - (config.screenSize[0] - config.mapSizePixels[0]) // 2, areaPos[1] - (config.screenSize[1] - config.mapSizePixels[1]) // 2)
 
     def addArea(self, pos):
         area = Area.Area(pos)
@@ -65,6 +65,21 @@ class Game:
         area.addWorker(config.firstWorkerPos)
         workerIndex = utils.localToIndex(config.firstWorkerPos)
         area.redrawTiles(workerIndex)
+
+        # update bounds
+        xBounds, yBounds = self.areaBounds
+        minX, maxX = xBounds
+        minY, maxY = yBounds
+        x, y = utils.areaToScreen(pos)        
+        if (x < minX):
+            minX = x
+        elif (x + config.mapSizePixels[0] > maxX):
+            maxX = x + config.mapSizePixels[0]
+        if (y < minY):
+            minY = y
+        elif (y + config.mapSizePixels[1] > maxY):
+            maxY = y + config.mapSizePixels[1]
+        self.areaBounds = ((minX, maxX), (minY, maxY))
         return area
 
     def update(self):
@@ -73,21 +88,26 @@ class Game:
             area.update(self.dt)
 
         # camera scroll
-        # mouseX, mouseY = pg.mouse.get_pos()
-        # bottomEdge = config.screenSize[1] - 50
-        # if (self.ui.hoveredButton == None):
-        #     if (mouseX > config.screenSize[0] - config.scrollMargin):
-        #         self.cameraPos = (self.cameraPos[0] - config.scrollSpeed * self.dt, self.cameraPos[1])
-        #         # self.cameraPos = (max(self.cameraPos[0], config.screenSize[0] - self.tilesSurface.get_width() - margin), self.cameraPos[1])
-        #     elif (mouseX < config.scrollMargin):
-        #         self.cameraPos = (self.cameraPos[0] + config.scrollSpeed * self.dt, self.cameraPos[1])
-        #         # self.cameraPos = (min(self.cameraPos[0], margin), self.cameraPos[1])            
-        #     if (mouseY > bottomEdge):
-        #         self.cameraPos = (self.cameraPos[0], self.cameraPos[1] - config.scrollSpeed * self.dt)
-        #         # self.cameraPos = (self.cameraPos[0], max(self.cameraPos[1], bottomEdge - self.tilesSurface.get_height() - margin))
-        #     elif (mouseY < config.scrollMargin):
-        #         self.cameraPos = (self.cameraPos[0], self.cameraPos[1] + config.scrollSpeed * self.dt)    
-        #         # self.cameraPos = (self.cameraPos[0], min(self.cameraPos[1], margin))
+        mouseX, mouseY = pg.mouse.get_pos()
+        bottomEdge = config.screenSize[1] - 50
+        if (self.ui.hoveredButton == None):
+            xBounds, yBounds = self.areaBounds
+            minX, maxX = xBounds
+            minY, maxY = yBounds
+            xMargin = (config.screenSize[0] - config.mapSizePixels[0]) // 2
+            yMargin = (config.screenSize[1] - config.mapSizePixels[1]) // 2
+            if (mouseX > config.screenSize[0] - config.scrollMargin):
+                self.cameraPos = (self.cameraPos[0] + config.scrollSpeed * self.dt, self.cameraPos[1])                
+                self.cameraPos = (min(self.cameraPos[0], maxX - config.mapSizePixels[0] - xMargin), self.cameraPos[1])
+            elif (mouseX < config.scrollMargin):
+                self.cameraPos = (self.cameraPos[0] - config.scrollSpeed * self.dt, self.cameraPos[1])
+                self.cameraPos = (max(self.cameraPos[0], minX - xMargin), self.cameraPos[1])
+            if (mouseY > bottomEdge):                
+                self.cameraPos = (self.cameraPos[0], self.cameraPos[1] + config.scrollSpeed * self.dt)
+                self.cameraPos = (self.cameraPos[0], min(self.cameraPos[1], maxY - config.mapSizePixels[1] - yMargin))
+            elif (mouseY < config.scrollMargin):                
+                self.cameraPos = (self.cameraPos[0], self.cameraPos[1] - config.scrollSpeed * self.dt)    
+                self.cameraPos = (self.cameraPos[0], max(self.cameraPos[1], minY - yMargin))
 
         self.ui.update()        
         self.dt = self.clock.tick(config.fps) / 1000
