@@ -17,11 +17,12 @@ class UI:
         self.hoveredButton = None     
 
         actions = [
-            "plough",
-            "plant",
-            "water",
-            "pick",
-            "worker"
+            # "plough",
+            # "plant",
+            # "water",
+            # "pick",
+            "worker",
+            "expand"
             # "harvest"
         ]
         self.buttons = []
@@ -29,7 +30,7 @@ class UI:
         iconSize = 100
         width = iconSize * len(actions) + config.uiGap * (len(actions) - 1)
         yPos = config.screenSize[1] - iconSize - config.uiPadding
-        xPos = (config.screenSize[0] - width) // 2
+        xPos = config.uiPadding #(config.screenSize[0] - width) // 2
         for action in actions:
             image = pg.image.load('images/ui/icon-' + action + '.png')
             self.buttons.append(button.Button(image, (xPos, yPos), action))

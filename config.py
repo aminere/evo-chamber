@@ -9,7 +9,7 @@ tileCount = mapSize[0] * mapSize[1]
 origin = (mapSize[0] - 1) * tileSize[0] // 2, 0
 mapSizePixels = mapSize[0] * tileSize[0], mapSize[1] * tileSize[1]
 surfaceSize = mapSizePixels[0], mapSizePixels[1] + 10
-maxAreasPerRow = 3
+maxAreasPerRow = 9
 
 scrollSpeed = 800
 scrollMargin = 100
@@ -31,6 +31,7 @@ plantCost = 2
 waterCost = 5
 pickCost = 2
 workerCost = 10
+expandCost = 20
 harvestGain = 20
 growDuration = 5
 harvestDuration = 2

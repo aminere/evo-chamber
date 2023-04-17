@@ -21,19 +21,19 @@ class Game:
         self.tileMask = pg.image.load('images/tile-mask.png')
         self.tileSelected = pg.image.load('images/tile-selected.png')
         
-        self.tileSelectedRed = pg.image.load('images/tile-selected-red.png')
+        # self.tileSelectedRed = pg.image.load('images/tile-selected-red.png')
         self.tileNoCoins = pg.image.load('images/tile-no-coins.png')
         # self.tileSelectedRed.set_alpha(128)
         # self.harvestIndicator = pg.image.load('images/ui/harvest-indicator.png')
 
         self.ui = ui.UI()
-        self.action = "plough"
-        self.ui.buttons[0].selected = True
-        self.actionAllowed = False
+        self.action = None
+        # self.ui.buttons[0].selected = True
+        # self.actionAllowed = False
         self.selectorInRange = False
         self.coins = config.coins
         self.lastChangedTile = None
-        self.cantAfford = False
+        self.canAfford = True
         # self.readyToHarvestTiles = linkedlist.LinkedList()
         self.updateCoins(0)
 
@@ -120,13 +120,11 @@ class Game:
     def draw(self):        
         self.screen.fill(config.bgColor)
 
-        # for area in self.activeAreas:
-        #     area.draw(self.screen, self.cameraPos)
         for y in range(config.maxAreasPerRow):
             for x in range(config.maxAreasPerRow):
                 area = self.areas[y][x]
                 if (area != None):
-                    area.draw(self.screen, self.cameraPos)        
+                    area.draw(self.screen, self.cameraPos)
 
         if (self.selectorInRange and self.ui.hoveredButton == None):
             sx, sy = utils.worldToScreen(self.selected)
@@ -138,14 +136,14 @@ class Game:
             tilePos = (sx - self.cameraPos[0], sy - self.cameraPos[1])
             if (tile.state == config.readyTile):
                 self.screen.blit(self.tileSelected, tilePos)
-            elif (self.action != None and index != self.lastChangedTile):
+            elif (index != self.lastChangedTile):
                 if (tile.worker == None and tile.action == None):
-                    if (self.cantAfford):
-                        self.screen.blit(self.tileNoCoins, tilePos)
-                    elif (self.actionAllowed):
+                    if (self.canAfford):                    
                         self.screen.blit(self.tileSelected, tilePos)
                     else:
-                        self.screen.blit(self.tileSelectedRed, tilePos)
+                        self.screen.blit(self.tileNoCoins, tilePos)
+                    # else:
+                        # self.screen.blit(self.tileSelectedRed, tilePos)
         # else:
         #     sx, sy = utils.worldToScreen(self.selected)
         #     tilePos = (sx - self.cameraPos[0], sy - self.cameraPos[1])
@@ -189,6 +187,8 @@ class Game:
                 area = self.areas[areaY][areaX]
                 if (area == None):
                     self.selectorInRange = False
+                    if self.action == "expand":
+                        self.canAfford = self.coins >= config.expandCost
                 else:
                     self.selectorInRange = True
                     localX, localY = utils.worldToLocal((areaX, areaY), self.selected)
@@ -196,24 +196,25 @@ class Game:
                     index = utils.localToIndex((localX, localY))
                     tile = area.tiles[index]
                     self.lastChangedTile = None
-                    self.actionAllowed = True
-                    self.cantAfford = False
+                    # self.actionAllowed = True
                     if (tile.worker != None or tile.action != None):
                         pass
-                    elif tile.state == config.readyTile:
-                        pass
-                    elif (self.action == "plough"):
-                        self.actionAllowed = tile.state == config.rawTile
-                    elif (self.action == "plant"):
-                        self.actionAllowed = tile.state == config.ploughedTile
-                    elif (self.action == "water"):
-                        self.actionAllowed = (tile.state >= config.plantedTile and tile.state < config.readyTile) or tile.state == config.fireTile
-                    # elif (self.action == "harvest"):
-                        # self.actionAllowed = tile.state == config.readyTile
-                    elif (self.action == "pick"):
-                        self.actionAllowed = tile.state == config.stoneTile
-                    elif (self.action == "worker"):
-                        self.actionAllowed = tile.state == config.rawTile                    
+                    if self.action == "expand":
+                        self.canAfford = False # must click outside to expand
+                    else:
+                        self.updateAffordability(tile)
+                    # elif (self.action == "plough"):
+                    #     self.actionAllowed = tile.state == config.rawTile
+                    # elif (self.action == "plant"):
+                    #     self.actionAllowed = tile.state == config.ploughedTile
+                    # elif (self.action == "water"):
+                    #     self.actionAllowed = (tile.state >= config.plantedTile and tile.state < config.readyTile) or tile.state == config.fireTile
+                    # # elif (self.action == "harvest"):
+                    #     # self.actionAllowed = tile.state == config.readyTile
+                    # elif (self.action == "pick"):
+                    #     self.actionAllowed = tile.state == config.stoneTile
+                    # elif (self.action == "worker"):
+                    #     self.actionAllowed = tile.state == config.rawTile                    
            
     def onMouseUp(self, button, mousePos):
         if (button == pg.BUTTON_LEFT):
@@ -232,14 +233,15 @@ class Game:
                 return
             
             if not self.selectorInRange:
-                # todo remove, test code
-                areaX, areaY = utils.worldToArea(self.selected)
-                if (areaX < 0 or areaY < 0 or areaX >= config.maxAreasPerRow or areaY >= config.maxAreasPerRow):
-                    pass
-                else:
-                    area = self.areas[areaY][areaX]
-                    if (area == None):
-                        self.addArea((areaX, areaY))                        
+                if self.action == "expand" and self.canAfford:
+                    areaX, areaY = utils.worldToArea(self.selected)
+                    if (areaX < 0 or areaY < 0 or areaX >= config.maxAreasPerRow or areaY >= config.maxAreasPerRow):
+                        pass
+                    else:
+                        area = self.areas[areaY][areaX]
+                        if (area == None):
+                            self.addArea((areaX, areaY))
+                            self.updateCoins(-config.expandCost)  
                 return
 
             areaX, areaY = utils.worldToArea(self.selected)
@@ -247,33 +249,59 @@ class Game:
             local = localX, localY = utils.worldToLocal((areaX, areaY), self.selected)
             index = utils.localToIndex((localX, localY))
             tile = area.tiles[index]
-            readyToHarvest = tile.state == config.readyTile
-            if (self.action != None and self.actionAllowed) or readyToHarvest:
-                if (tile.action == None and tile.worker == None):
-                    if readyToHarvest:
-                        closestWorker = area.getClosestWorker(local)
-                        closestWorker.queueAction("harvest", index)
-                        tile.action = "harvest"
-                        self.actionAllowed = False
-                        self.lastChangedTile = index
-                        area.wipTiles.append(index)
-                    elif self.canAfford(self.action):
-                        if (self.action == "worker"):
-                            area.addWorker(local)
-                            area.redrawTiles(index)
-                        else:
-                            closestWorker = area.getClosestWorker(local)
-                            closestWorker.queueAction(self.action, index)
-                            tile.action = self.action
-                            self.actionAllowed = False
-                            self.lastChangedTile = index
-                            area.wipTiles.append(index)
-                            if (self.action == 'plough'): self.updateCoins(-config.ploughCost)            
-                            elif (self.action == 'plant'): self.updateCoins(-config.plantCost)
-                            elif (self.action == 'water'): self.updateCoins(-config.waterCost)
-                            elif (self.action == 'pick'): self.updateCoins(-config.pickCost)
-                    else:
-                        self.cantAfford = True
+            if self.canAfford and tile.action == None:
+                if (self.action == "worker"): 
+                    area.addWorker(local)
+                    area.redrawTiles(index)
+                    self.updateCoins(-config.workerCost)
+                    self.updateAffordability(tile)
+                elif tile.state == config.rawTile:
+                    self.queueAction(area, local, tile, index, "plough", config.ploughCost)
+                elif tile.state == config.ploughedTile:
+                    self.queueAction(area, local, tile, index, "plant", config.plantCost)
+                elif (tile.state >= config.plantedTile and tile.state < config.readyTile) or tile.state == config.fireTile:
+                    self.queueAction(area, local, tile, index, "water", config.waterCost)
+                elif tile.state == config.readyTile:
+                    self.queueAction(area, local, tile, index, "harvest", 0)
+                elif tile.state == config.stoneTile:
+                    self.queueAction(area, local, tile, index, "pick", config.pickCost)
+
+            # readyToHarvest = tile.state == config.readyTile
+            # if (self.action != None and self.actionAllowed) or readyToHarvest:
+            #     if (tile.action == None and tile.worker == None):
+            #         if readyToHarvest:
+            #             closestWorker = area.getClosestWorker(local)
+            #             closestWorker.queueAction("harvest", index)
+            #             tile.action = "harvest"
+            #             self.actionAllowed = False
+            #             self.lastChangedTile = index
+            #             area.wipTiles.append(index)
+            #         elif self.canAfford(self.action):
+            #             if (self.action == "worker"):
+            #                 area.addWorker(local)
+            #                 area.redrawTiles(index)
+            #             else:
+            #                 closestWorker = area.getClosestWorker(local)
+            #                 closestWorker.queueAction(self.action, index)
+            #                 tile.action = self.action
+            #                 self.actionAllowed = False
+            #                 self.lastChangedTile = index
+            #                 area.wipTiles.append(index)
+            #                 if (self.action == 'plough'): self.updateCoins(-config.ploughCost)            
+            #                 elif (self.action == 'plant'): self.updateCoins(-config.plantCost)
+            #                 elif (self.action == 'water'): self.updateCoins(-config.waterCost)
+            #                 elif (self.action == 'pick'): self.updateCoins(-config.pickCost)
+            #         else:
+            #             self.canAfford = True
+
+    def queueAction(self, area, localPos, tile, tileIndex, action, cost):
+        closestWorker = area.getClosestWorker(localPos)
+        closestWorker.queueAction(action, tileIndex)
+        tile.action = action
+        self.lastChangedTile = tileIndex
+        area.wipTiles.append(tileIndex)
+        self.updateCoins(-cost)
+        self.updateAffordability(tile)
 
     def tryUpdateButton(self, button, action, cost):
         updated = False
@@ -282,27 +310,47 @@ class Game:
             button.disabled = self.coins < cost
             if (button.disabled and self.action == action):
                 self.action = None
+                button.selected = False
         return updated
+    
+    def updateAffordability(self, tile):
+        if self.action == "worker":
+            self.canAfford = tile.state == config.rawTile
+        elif tile.state == config.readyTile:
+            self.canAfford = True
+        elif tile.state == config.rawTile:
+            self.canAfford = self.coins >= config.ploughCost
+        elif tile.state == config.ploughedTile:
+            self.canAfford = self.coins >= config.plantCost
+        elif (tile.state >= config.plantedTile and tile.state < config.readyTile) or tile.state == config.fireTile:
+            self.canAfford = self.coins >= config.waterCost
+        elif tile.state == config.stoneTile:
+            self.canAfford = self.coins >= config.pickCost
+        else:
+            self.canAfford = False
+            print("unknown tile state")
 
     def updateCoins(self, amount):
         self.coins += amount
         for button in self.ui.buttons:
-            if not self.tryUpdateButton(button, 'plough', config.ploughCost):
-                if not self.tryUpdateButton(button, 'plant', config.plantCost):
-                    if not self.tryUpdateButton(button, 'water', config.waterCost):
-                        if not self.tryUpdateButton(button, 'pick', config.pickCost):
-                            self.tryUpdateButton(button, 'worker', config.workerCost)
+            if not self.tryUpdateButton(button, 'worker', config.workerCost):
+                self.tryUpdateButton(button, 'expand', config.expandCost)                            
+            # if not self.tryUpdateButton(button, 'plough', config.ploughCost):
+            #     if not self.tryUpdateButton(button, 'plant', config.plantCost):
+            #         if not self.tryUpdateButton(button, 'water', config.waterCost):
+            #             if not self.tryUpdateButton(button, 'pick', config.pickCost):
+            #                 self.tryUpdateButton(button, 'worker', config.workerCost)
     
-    def canAfford(self, action):
-        if (action == 'plough'):
-            return self.coins >= config.ploughCost
-        elif (action == 'plant'):
-            return self.coins >= config.plantCost
-        elif (action == 'water'):
-            return self.coins >= config.waterCost
-        elif (action == 'pick'):
-            return self.coins >= config.pickCost
-        elif action == "worker":
-            return self.coins >= config.workerCost
-        return True
+    # def canAfford(self, action):
+    #     if (action == 'plough'):
+    #         return self.coins >= config.ploughCost
+    #     elif (action == 'plant'):
+    #         return self.coins >= config.plantCost
+    #     elif (action == 'water'):
+    #         return self.coins >= config.waterCost
+    #     elif (action == 'pick'):
+    #         return self.coins >= config.pickCost
+    #     elif action == "worker":
+    #         return self.coins >= config.workerCost
+    #     return True
 
