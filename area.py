@@ -62,6 +62,7 @@ class Area:
                         self.fireTiles.append(index)
                         game.fireTiles += 1
                         game.readyTiles -= 1
+                        game.fireSound.play()
                 elif tile.state < config.readyTile:
                     tile.time += dt
                     if (tile.time >= config.growDuration):
@@ -69,6 +70,7 @@ class Area:
                         newState = tile.state + 1
                         tile.state = newState                    
                         self.redrawTiles(index)
+                        game.progressSound.play()
                         if (newState == config.readyTile):
                             game.plantedTiles -= 1
                             game.readyTiles += 1

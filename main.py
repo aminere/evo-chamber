@@ -14,8 +14,11 @@ while True:
             sys.exit()
         elif event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE:
-                pg.quit()
-                sys.exit()
+                if (game.showIntro):
+                    pg.quit()
+                    sys.exit()
+                else:
+                    game.goBackToIntro()
         elif event.type == pg.MOUSEBUTTONUP:
             game.onMouseUp(event.button, event.pos)
         elif event.type == pg.MOUSEMOTION:            

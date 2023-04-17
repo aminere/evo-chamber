@@ -77,6 +77,7 @@ class Character:
                     area.plantedTiles.delete(self.actionTile)
                     area.fireTiles.delete(self.actionTile)
                     game.updateAffordability(tile)
+                    game.positiveSound.play()
                 elif (self.action == 'pick'):
                     tile.state = config.rawTile
                     area.redrawTiles(self.actionTile) 

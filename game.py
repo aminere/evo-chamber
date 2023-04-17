@@ -50,7 +50,7 @@ class Game:
         self.reset()
 
         # intro
-        self.intro = True
+        self.showIntro = True
         self.logo = pg.image.load('images/logo.png')
         self.play = pg.image.load('images/ui/play.png')
         logoY = (config.screenSize[1] - self.logo.get_height()) / 2
@@ -63,6 +63,17 @@ class Game:
             _button.visible = False
         playButton.visible = True
         # self.showGameover(True)
+
+        # play music using pygame        
+        pg.mixer.music.load('audio/Juhani Junkala Chiptune Adventures 1 Stage 1.ogg')
+        pg.mixer.music.play(-1)
+        self.playSound = pg.mixer.Sound('audio/GUI_Sound_Effects_by_Lokif/load.wav')
+        self.positiveSound = pg.mixer.Sound('audio/GUI_Sound_Effects_by_Lokif/positive.wav')
+        self.clickSound = pg.mixer.Sound('audio/GUI_Sound_Effects_by_Lokif/misc_menu.wav')
+        self.tileSound = pg.mixer.Sound('audio/GUI_Sound_Effects_by_Lokif/misc_menu_4.wav')
+        self.expandSound = pg.mixer.Sound('audio/GUI_Sound_Effects_by_Lokif/save.wav')
+        self.fireSound = pg.mixer.Sound('audio/GUI_Sound_Effects_by_Lokif/negative.wav')
+        self.progressSound = pg.mixer.Sound('audio/GUI_Sound_Effects_by_Lokif/sharp_echo.wav')
 
     def reset(self):
         self.action = None
@@ -175,7 +186,7 @@ class Game:
                 if (area != None):
                     area.draw(self.screen, self.cameraPos)
 
-        if self.intro:
+        if self.showIntro:
             self.screen.fill((20, 23, 17))
             gx, gy = (config.screenSize[0] - self.logo.get_width()) / 2, (config.screenSize[1] - self.logo.get_height()) / 2
             self.screen.blit(self.logo , (gx, gy))
@@ -285,18 +296,20 @@ class Game:
 
             if (self.ui.pressedButton != None):                
                 if self.ui.pressedButton.action == "play":
-                    self.intro = False
+                    self.showIntro = False
                     for _button in self.ui.buttons:
                         _button.visible = True
                     self.ui.playButton.visible = False
                     self.ui.replayButton.visible = False
                     self.ui.showCoins = True
+                    self.playSound.play()
                 elif (self.ui.pressedButton.action == "replay"):
                     self.showGameover(False)                    
                     self.updateCoins(config.coins - self.coins)
                     self.reset()
                     for _button in self.ui.buttons:
                         _button.selected = False
+                    self.playSound.play()
                 else:
                     if (self.action == self.ui.pressedButton.action):
                         self.action = None
@@ -304,6 +317,7 @@ class Game:
                         self.action = self.ui.pressedButton.action                    
                     for _button in self.ui.buttons:
                         _button.selected = _button.action == self.action
+                    self.clickSound.play()
                 self.ui.pressedButton = None
                 return
             
@@ -324,7 +338,8 @@ class Game:
                             self.addArea((areaX, areaY))
                             self.updateCoins(-config.expandCost)  
                             self.action = None
-                            self.ui.expandButton.selected = False                          
+                            self.ui.expandButton.selected = False
+                            self.expandSound.play()                          
                 return
 
             areaX, areaY = utils.worldToArea(self.selected)
@@ -341,6 +356,7 @@ class Game:
                         self.updateAffordability(tile)                    
                         self.action = None
                         self.ui.workerButton.selected = False
+                        self.tileSound.play()
                 elif self.canAfford and len(area.workers) > 0:
                     if tile.state == config.rawTile:
                         self.rawTiles -= 1
@@ -407,6 +423,7 @@ class Game:
         # self.lastChangedTile = tileIndex        
         self.updateCoins(-cost)
         self.updateAffordability(tile)
+        self.tileSound.play()
 
     def printTileCounts(self):
         pass
@@ -473,3 +490,16 @@ class Game:
         self.ui.workerButton.visible = uiVisible
         self.ui.expandButton.visible = uiVisible
         self.ui.replayButton.visible = show
+
+    def goBackToIntro(self):
+        self.playSound.play()
+        if (self.gameoverVisible):
+            self.showGameover(False)        
+        self.updateCoins(config.coins - self.coins)
+        self.reset()
+        for _button in self.ui.buttons:
+           _button.selected = False
+           _button.visible = False
+        self.showIntro = True
+        self.ui.playButton.visible = True
+        self.ui.showCoins = False
