@@ -60,15 +60,18 @@ class Area:
                         tile.time = 0
                         tile.state = config.fireTile
                         self.fireTiles.append(index)
-                        game.plantedTiles -= 1
                         game.fireTiles += 1
+                        game.readyTiles -= 1
                 elif tile.state < config.readyTile:
                     tile.time += dt
                     if (tile.time >= config.growDuration):
                         tile.time = 0
                         newState = tile.state + 1
                         tile.state = newState                    
-                        self.redrawTiles(index)            
+                        self.redrawTiles(index)
+                        if (newState == config.readyTile):
+                            game.plantedTiles -= 1
+                            game.readyTiles += 1
             plantedTile = plantedTile.next
 
     def draw(self, screen, cameraPos):

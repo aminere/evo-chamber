@@ -70,6 +70,7 @@ class Character:
                 area.redrawTiles(self.actionTile)
                 area.plantedTiles.delete(self.actionTile)
                 area.fireTiles.delete(self.actionTile)
+                game.updateAffordability(tile)
             elif (self.action == 'pick'):
                 tile.state = config.rawTile
                 area.redrawTiles(self.actionTile)
