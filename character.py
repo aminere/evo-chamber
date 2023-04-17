@@ -55,11 +55,13 @@ class Character:
                 tile = area.tiles[self.actionTile]
                 if (self.action == 'plough'):
                     tile.state = config.ploughedTile
-                    area.redrawTiles(self.actionTile)                
+                    area.redrawTiles(self.actionTile)     
+                    game.workCompleted.play()           
                 elif (self.action == 'plant'):
                     tile.state = config.plantedTile
                     area.redrawTiles(self.actionTile)
                     area.plantedTiles.append(self.actionTile)
+                    game.workCompleted.play()           
                 elif (self.action == 'water'):
                     if tile.state == config.fireTile:
                         tile.state = config.stoneTile
@@ -68,19 +70,20 @@ class Character:
                         area.plantedTiles.delete(self.actionTile)
                     else:
                         tile.time = config.growDuration
+                    game.workCompleted.play()
                 elif (self.action == 'harvest'):
                     tile.state = config.stoneTile
-                    game.stoneTiles += 1
-                    game.readyTiles -= 1
                     game.updateCoins(config.harvestGain)
                     area.redrawTiles(self.actionTile)
                     area.plantedTiles.delete(self.actionTile)
                     area.fireTiles.delete(self.actionTile)
-                    game.updateAffordability(tile)
+                    game.updateAffordability(tile)                    
                     game.positiveSound.play()
+                    game.totalHavests += 1
                 elif (self.action == 'pick'):
                     tile.state = config.rawTile
-                    area.redrawTiles(self.actionTile) 
+                    area.redrawTiles(self.actionTile)
+                    game.workCompleted.play()
                 else:
                     print(f"invalid action: {self.action}")
 

@@ -43,7 +43,9 @@ class Game:
         self.ui.replayButton = replayButton
         self.ranOutOfCoins = self.ui.font.render("You ran out of coins!", False, (255, 255, 255))
         ranOfOfCoinsY = replayY + self.replay.get_height() + config.uiGap * 2
-        self.ranOutOfCoinsRect = self.ranOutOfCoins.get_rect(center=(config.screenSize[0] / 2, ranOfOfCoinsY))
+        self.ranOutOfCoinsRect = self.ranOutOfCoins.get_rect(center=(config.screenSize[0] / 2, ranOfOfCoinsY))  
+        self.harvestTile = pg.image.load('images/tile-ground4.png')      
+        self.totalHarvestsText = None
         
         self.action = None
         self.coins = config.coins
@@ -54,7 +56,7 @@ class Game:
         self.logo = pg.image.load('images/logo.png')
         self.play = pg.image.load('images/ui/play.png')
         logoY = (config.screenSize[1] - self.logo.get_height()) / 2
-        playY = logoY + self.logo.get_height() + config.uiGap
+        playY = logoY + self.logo.get_height() + config.uiGapf
         playPos = ((config.screenSize[0] - self.play.get_width()) / 2, playY)
         playButton = button.Button(self.play, playPos, "play")
         self.ui.buttons.append(playButton)
@@ -74,6 +76,7 @@ class Game:
         self.expandSound = pg.mixer.Sound('audio/GUI_Sound_Effects_by_Lokif/save.wav')
         self.fireSound = pg.mixer.Sound('audio/GUI_Sound_Effects_by_Lokif/negative.wav')
         self.progressSound = pg.mixer.Sound('audio/GUI_Sound_Effects_by_Lokif/sharp_echo.wav')
+        self.workCompleted = pg.mixer.Sound('audio/fx/Rise01.wav')
 
     def reset(self):
         self.action = None
@@ -81,6 +84,7 @@ class Game:
         self.selectorInRange = False
         # self.lastChangedTile = None
         self.canAfford = True
+        self.totalHarvests = 0
         
         # initialize areas
         maxAreasPerRow = config.maxAreasPerRow
@@ -187,7 +191,8 @@ class Game:
                     area.draw(self.screen, self.cameraPos)
 
         if self.showIntro:
-            self.screen.fill((20, 23, 17))
+            # self.screen.fill((20, 23, 17))
+            self.screen.blit(self.backdrop, (0, 0))
             gx, gy = (config.screenSize[0] - self.logo.get_width()) / 2, (config.screenSize[1] - self.logo.get_height()) / 2
             self.screen.blit(self.logo , (gx, gy))
         elif (self.gameoverVisible):
@@ -195,6 +200,13 @@ class Game:
             gx, gy = (config.screenSize[0] - self.gameover.get_width()) / 2, (config.screenSize[1] - self.gameover.get_height()) / 2
             self.screen.blit(self.gameover , (gx, gy))
             self.screen.blit(self.ranOutOfCoins, self.ranOutOfCoinsRect)
+            harvestTileY = config.uiGap * 4
+            self.screen.blit(self.harvestTile, ((config.screenSize[0] - self.harvestTile.get_width()) / 2, harvestTileY))
+            totalHarvestY = harvestTileY + self.harvestTile.get_height() + config.uiGap * 2
+            if (self.totalHarvestsText == None):
+                self.totalHarvestsText = self.ui.font.render(f"Total Harvests: {self.totalHarvests}", False, (255, 255, 255))
+            rc = self.totalHarvestsText.get_rect(center=(config.screenSize[0] / 2, totalHarvestY))  
+            self.screen.blit(self.totalHarvestsText, rc)
         else:
             sx, sy = utils.worldToScreen(self.selected)
             areaPos = areaX, areaY = utils.worldToArea(self.selected)
@@ -303,6 +315,7 @@ class Game:
                     self.ui.replayButton.visible = False
                     self.ui.showCoins = True
                     self.playSound.play()
+                    self.playInGameMusic()
                 elif (self.ui.pressedButton.action == "replay"):
                     self.showGameover(False)                    
                     self.updateCoins(config.coins - self.coins)
@@ -310,6 +323,7 @@ class Game:
                     for _button in self.ui.buttons:
                         _button.selected = False
                     self.playSound.play()
+                    self.playInGameMusic()
                 else:
                     if (self.action == self.ui.pressedButton.action):
                         self.action = None
@@ -373,7 +387,13 @@ class Game:
                         self.queueAction(area, local, tile, index, "water", config.waterCost)                    
                     elif tile.state == config.readyTile:
                         self.readyTiles -= 1
-                        self.queueAction(area, local, tile, index, "harvest", 0)                    
+                        self.stoneTiles += 1
+                        tile.action = "harvest"
+                        area.wipTiles.append(index)                        
+                        closestWorker = area.getClosestWorker(local)
+                        closestWorker.queueAction("harvest", index)
+                        self.updateAffordability(tile)
+                        self.tileSound.play()
                     elif tile.state == config.stoneTile:
                         self.rawTiles += 1
                         self.stoneTiles -= 1
@@ -472,7 +492,9 @@ class Game:
         if not checkGameOver:
             return
 
-        # check game over
+        self.doGameoverCheck()
+
+    def doGameoverCheck(self):
         isGameover = False
         if (self.coins < config.plantCost):
             isGameover = self.plantedTiles == 0 and self.readyTiles == 0
@@ -490,6 +512,10 @@ class Game:
         self.ui.workerButton.visible = uiVisible
         self.ui.expandButton.visible = uiVisible
         self.ui.replayButton.visible = show
+        if (show):
+            self.playGameoverMusic()
+        else:
+            self.totalHarvestsText = None
 
     def goBackToIntro(self):
         self.playSound.play()
@@ -503,3 +529,12 @@ class Game:
         self.showIntro = True
         self.ui.playButton.visible = True
         self.ui.showCoins = False
+
+    def playInGameMusic(self):
+        pg.mixer.music.load('audio/Caketown 1.ogg')
+        pg.mixer.music.play(-1)
+
+    def playGameoverMusic(self):
+        pg.mixer.music.load('audio/25 - Finale.ogg')
+        pg.mixer.music.play(-1)
+

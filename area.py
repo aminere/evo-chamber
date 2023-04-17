@@ -63,6 +63,7 @@ class Area:
                         game.fireTiles += 1
                         game.readyTiles -= 1
                         game.fireSound.play()
+                        game.doGameoverCheck()
                 elif tile.state < config.readyTile:
                     tile.time += dt
                     if (tile.time >= config.growDuration):
