@@ -46,10 +46,10 @@ class Character:
             if (arrived):
                 self.state = State.WORKING
                 self.workingTime = 0
-                size = area.wipTiles.size
+                # size = area.wipTiles.size
                 area.wipTiles.delete(self.actionTile)
-                if (area.wipTiles.size != size - 1):
-                    print("invalid wip tile size")
+                # if (area.wipTiles.size != size - 1):
+                #     print("invalid wip tile size")
         elif self.state == State.WORKING: 
             if self.workingTime >= 0: #config.workDuration:
                 tile = area.tiles[self.actionTile]
@@ -71,15 +71,14 @@ class Character:
                     else:
                         tile.time = config.growDuration
                     game.workCompleted.play()
-                elif (self.action == 'harvest'):
+                elif (self.action == 'harvest'):                    
                     tile.state = config.stoneTile
                     game.updateCoins(config.harvestGain)
                     area.redrawTiles(self.actionTile)
                     area.plantedTiles.delete(self.actionTile)
-                    area.fireTiles.delete(self.actionTile)
                     game.updateAffordability(tile)                    
                     game.positiveSound.play()
-                    game.totalHavests += 1
+                    game.totalHarvests += 1
                 elif (self.action == 'pick'):
                     tile.state = config.rawTile
                     area.redrawTiles(self.actionTile)
@@ -88,7 +87,8 @@ class Character:
                     print(f"invalid action: {self.action}")
 
                 tile.action = None
-                if (self.actionQueue.head != None):
+                # if (self.actionQueue.head != None):
+                if len(self.actionQueue.arr) > 0:
                     self.state = State.IDLE
                 else:
                     self.moveTo(utils.localToIndex(self.startingPos))
@@ -100,13 +100,14 @@ class Character:
             if (arrived):
                 self.state = State.IDLE
         elif (self.state == State.IDLE):
-            if (self.actionQueue.head != None):
-                action, tileIndex = self.actionQueue.head.data
+            if len(self.actionQueue.arr) > 0:
+            # if (self.actionQueue.head != None):
+                action, tileIndex = self.actionQueue.arr[0]#.head.data
                 self.moveTo(tileIndex)
                 self.action = action
                 self.actionTile = tileIndex
                 self.actionQueue.deleteHead()
-                self.state = State.GOING_TO_WORK       
+                self.state = State.GOING_TO_WORK
 
     def draw(self, surface, areaPos):
 

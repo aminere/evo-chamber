@@ -56,7 +56,7 @@ class Game:
         self.logo = pg.image.load('images/logo.png')
         self.play = pg.image.load('images/ui/play.png')
         logoY = (config.screenSize[1] - self.logo.get_height()) / 2
-        playY = logoY + self.logo.get_height() + config.uiGapf
+        playY = logoY + self.logo.get_height() + config.uiGap
         playPos = ((config.screenSize[0] - self.play.get_width()) / 2, playY)
         playButton = button.Button(self.play, playPos, "play")
         self.ui.buttons.append(playButton)
@@ -434,10 +434,10 @@ class Game:
 
     def queueAction(self, area, localPos, tile, tileIndex, action, cost):
         tile.action = action
-        size = area.wipTiles.size
+        # size = area.wipTiles.size
         area.wipTiles.append(tileIndex)
-        if (area.wipTiles.size != size + 1):
-            print("invalid wip tile size")
+        # if (area.wipTiles.size != size + 1):
+        #     print("invalid wip tile size")
         closestWorker = area.getClosestWorker(localPos)
         closestWorker.queueAction(action, tileIndex)        
         # self.lastChangedTile = tileIndex        

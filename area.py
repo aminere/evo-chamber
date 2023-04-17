@@ -49,9 +49,10 @@ class Area:
             worker.update(dt)
 
         # update tiles
-        plantedTile = self.plantedTiles.head
-        while plantedTile is not None:
-            index = plantedTile.data
+        for plantedTile in self.plantedTiles.arr:
+        # plantedTile = self.plantedTiles.head
+        # while plantedTile is not None:
+            index = plantedTile#.data
             tile = self.tiles[index]          
             if tile.action == None:
                 if (tile.state == config.readyTile):
@@ -75,7 +76,7 @@ class Area:
                         if (newState == config.readyTile):
                             game.plantedTiles -= 1
                             game.readyTiles += 1
-            plantedTile = plantedTile.next
+            # plantedTile = plantedTile.next
 
     def draw(self, screen, cameraPos):
         sx, sy = utils.areaToScreen(self.position)
@@ -83,26 +84,28 @@ class Area:
 
         ax, ay = utils.areaToScreen(self.position)
         # draw wip tiles
-        wipTile = self.wipTiles.head
-        while wipTile is not None:
-            index = wipTile.data
+        for wipTile in self.wipTiles.arr:
+        # wipTile = self.wipTiles.head
+        # while wipTile is not None:
+            index = wipTile#.data
             pos = utils.indexToLocal(index)            
             sx, sy = utils.worldToScreen(pos)
             screen.blit(tileWip, (sx + ax - cameraPos[0], sy + ay - cameraPos[1]))
-            wipTile = wipTile.next
+            # wipTile = wipTile.next
 
         # todo draw selector if any
 
         # draw fire tiles
-        fireTile = self.fireTiles.head
-        while fireTile is not None:
-            index = fireTile.data
+        for fireTile in self.fireTiles.arr:
+        # fireTile = self.fireTiles.head
+        # while fireTile is not None:
+            index = fireTile#.data
             pos = utils.indexToLocal(index)
             sx, sy = utils.worldToScreen(pos)
             ox = config.tileSize[0] // 2 - fire1.get_width() // 2
             oy = -76
             screen.blit(fire1, (sx + ax - cameraPos[0] + ox, sy + ay - cameraPos[1] + oy))
-            fireTile = fireTile.next
+            # fireTile = fireTile.next
 
         for worker in self.workers:
             worker.draw(screen, (ax, ay))
