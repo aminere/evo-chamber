@@ -25,7 +25,7 @@ readyTile = plantedTile + 2
 fireTile = readyTile + 1
 stoneTile = fireTile + 1
 
-coins = 50
+coins = 500
 ploughCost = 1
 plantCost = 2
 waterCost = 5
@@ -36,5 +36,6 @@ harvestGain = 20
 growDuration = 5
 harvestDuration = 2
 workerSpeed = 0.7
+workDuration = 2
 
 firstWorkerPos = (0, mapSize[1] // 2 - 1)

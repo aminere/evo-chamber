@@ -41,7 +41,7 @@ class Area:
         self.workers = []
         self.plantedTiles = linkedlist.LinkedList()
         self.fireTiles = linkedlist.LinkedList()
-        self.wipTiles = linkedlist.LinkedList()
+        self.wipTiles = linkedlist.LinkedList()        
 
     def update(self, dt):
         game = singletons._game

@@ -14,7 +14,8 @@ class UI:
         
         # self.rect = pg.Rect(0, config.screenSize[1] - height, self.surface.get_width(), height)
         self.pressedButton = None
-        self.hoveredButton = None     
+        self.hoveredButton = None    
+        self.showCoins = False 
 
         actions = [
             # "plough",
@@ -39,6 +40,7 @@ class UI:
         self.workerButton = self.buttons[0]
         self.expandButton = self.buttons[1]
         self.replayButton = None
+        self.playButton = None        
 
     def update(self):
         (leftPressed, _, _) = pg.mouse.get_pressed()
@@ -67,11 +69,10 @@ class UI:
         for button in self.buttons:
             button.draw(screen)
 
-        # screen.blit(self.surface, (0, config.screenSize[1] - self.surface.get_height()))
-        screen.blit(self.coin, (config.uiPadding, config.uiPadding))       
-
-        game = singletons._game
-        text = self.font.render(f"{game.coins}", False, (255, 255, 255))
-        screen.blit(text, (config.uiGap * 2 + self.coin.get_width(), config.uiGap))
+        if (self.showCoins):
+            screen.blit(self.coin, (config.uiPadding, config.uiPadding))
+            game = singletons._game
+            text = self.font.render(f"{game.coins}", False, (255, 255, 255))
+            screen.blit(text, (config.uiGap * 2 + self.coin.get_width(), config.uiGap))
 
     

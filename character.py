@@ -35,6 +35,7 @@ class Character:
         self.actionTile = None
         self.action = None
         self.actionQueue = linkedlist.LinkedList()
+        self.workingTime = 0
         # self.moveQueue = None
 
     def update(self, dt):
@@ -44,45 +45,52 @@ class Character:
             arrived = self.updateMotion(dt)
             if (arrived):
                 self.state = State.WORKING
+                self.workingTime = 0
+                size = area.wipTiles.size
                 area.wipTiles.delete(self.actionTile)
-        elif self.state == State.WORKING:            
-            tile = area.tiles[self.actionTile]
-            if (self.action == 'plough'):
-                tile.state = config.ploughedTile
-                area.redrawTiles(self.actionTile)                
-            elif (self.action == 'plant'):
-                tile.state = config.plantedTile
-                area.redrawTiles(self.actionTile)
-                area.plantedTiles.append(self.actionTile)
-            elif (self.action == 'water'):
-                if tile.state == config.fireTile:
-                    tile.state = config.stoneTile
+                if (area.wipTiles.size != size - 1):
+                    print("invalid wip tile size")
+        elif self.state == State.WORKING: 
+            if self.workingTime >= 0: #config.workDuration:
+                tile = area.tiles[self.actionTile]
+                if (self.action == 'plough'):
+                    tile.state = config.ploughedTile
+                    area.redrawTiles(self.actionTile)                
+                elif (self.action == 'plant'):
+                    tile.state = config.plantedTile
                     area.redrawTiles(self.actionTile)
-                    area.fireTiles.delete(self.actionTile)
+                    area.plantedTiles.append(self.actionTile)
+                elif (self.action == 'water'):
+                    if tile.state == config.fireTile:
+                        tile.state = config.stoneTile
+                        area.redrawTiles(self.actionTile)
+                        area.fireTiles.delete(self.actionTile)
+                        area.plantedTiles.delete(self.actionTile)
+                    else:
+                        tile.time = config.growDuration
+                elif (self.action == 'harvest'):
+                    tile.state = config.stoneTile
+                    game.stoneTiles += 1
+                    game.readyTiles -= 1
+                    game.updateCoins(config.harvestGain)
+                    area.redrawTiles(self.actionTile)
                     area.plantedTiles.delete(self.actionTile)
+                    area.fireTiles.delete(self.actionTile)
+                    game.updateAffordability(tile)
+                elif (self.action == 'pick'):
+                    tile.state = config.rawTile
+                    area.redrawTiles(self.actionTile) 
                 else:
-                    tile.time = config.growDuration
-            elif (self.action == 'harvest'):
-                tile.state = config.stoneTile
-                game.stoneTiles += 1
-                game.readyTiles -= 1
-                game.updateCoins(config.harvestGain)
-                area.redrawTiles(self.actionTile)
-                area.plantedTiles.delete(self.actionTile)
-                area.fireTiles.delete(self.actionTile)
-                game.updateAffordability(tile)
-            elif (self.action == 'pick'):
-                tile.state = config.rawTile
-                area.redrawTiles(self.actionTile)
+                    print(f"invalid action: {self.action}")
 
-            tile.action = None
-
-            if (self.actionQueue.head != None):
-                self.state = State.IDLE
+                tile.action = None
+                if (self.actionQueue.head != None):
+                    self.state = State.IDLE
+                else:
+                    self.moveTo(utils.localToIndex(self.startingPos))
+                    self.state = State.GOING_HOME
             else:
-                self.moveTo(utils.localToIndex(self.startingPos))
-                self.state = State.GOING_HOME            
-
+                self.workingTime += dt
         elif self.state == State.GOING_HOME:
             arrived = self.updateMotion(dt)
             if (arrived):

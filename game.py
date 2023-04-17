@@ -48,7 +48,21 @@ class Game:
         self.action = None
         self.coins = config.coins
         self.reset()
-        self.showGameover(True)
+
+        # intro
+        self.intro = True
+        self.logo = pg.image.load('images/logo.png')
+        self.play = pg.image.load('images/ui/play.png')
+        logoY = (config.screenSize[1] - self.logo.get_height()) / 2
+        playY = logoY + self.logo.get_height() + config.uiGap
+        playPos = ((config.screenSize[0] - self.play.get_width()) / 2, playY)
+        playButton = button.Button(self.play, playPos, "play")
+        self.ui.buttons.append(playButton)
+        self.ui.playButton = playButton 
+        for _button in self.ui.buttons:
+            _button.visible = False
+        playButton.visible = True
+        # self.showGameover(True)
 
     def reset(self):
         self.action = None
@@ -86,6 +100,14 @@ class Game:
 
         # center area in view
         self.cameraPos = (areaPos[0] - (config.screenSize[0] - config.mapSizePixels[0]) // 2, areaPos[1] - (config.screenSize[1] - config.mapSizePixels[1]) // 2)        
+
+        # todo testing
+        firstArea.addWorker((3, 0))
+        firstArea.addWorker((3, 3))
+        area = self.addArea((self.startingAreaPos[0] + 1, self.startingAreaPos[1]))        
+        area.addWorker((0, 0))
+        area.addWorker((3, 0))
+        area.addWorker((3, 3))
 
     def addArea(self, pos):
         area = Area.Area(pos)
@@ -133,10 +155,10 @@ class Game:
             elif (mouseX < config.scrollMargin):
                 self.cameraPos = (self.cameraPos[0] - config.scrollSpeed * self.dt, self.cameraPos[1])
                 self.cameraPos = (max(self.cameraPos[0], minX - xMargin), self.cameraPos[1])
-            if (mouseY > bottomEdge):                
+            if (mouseY > bottomEdge):
                 self.cameraPos = (self.cameraPos[0], self.cameraPos[1] + config.scrollSpeed * self.dt)
                 self.cameraPos = (self.cameraPos[0], min(self.cameraPos[1], maxY - config.mapSizePixels[1] - yMargin))
-            elif (mouseY < config.scrollMargin):                
+            elif (mouseY < config.scrollMargin):
                 self.cameraPos = (self.cameraPos[0], self.cameraPos[1] - config.scrollSpeed * self.dt)    
                 self.cameraPos = (self.cameraPos[0], max(self.cameraPos[1], minY - yMargin))
 
@@ -153,7 +175,11 @@ class Game:
                 if (area != None):
                     area.draw(self.screen, self.cameraPos)
 
-        if (self.gameoverVisible):
+        if self.intro:
+            self.screen.fill((20, 23, 17))
+            gx, gy = (config.screenSize[0] - self.logo.get_width()) / 2, (config.screenSize[1] - self.logo.get_height()) / 2
+            self.screen.blit(self.logo , (gx, gy))
+        elif (self.gameoverVisible):
             self.screen.blit(self.backdrop, (0, 0))
             gx, gy = (config.screenSize[0] - self.gameover.get_width()) / 2, (config.screenSize[1] - self.gameover.get_height()) / 2
             self.screen.blit(self.gameover , (gx, gy))
@@ -168,7 +194,8 @@ class Game:
                 tile = area.tiles[index]
                 tilePos = (sx - self.cameraPos[0], sy - self.cameraPos[1])
                 if (tile.state == config.readyTile):
-                    self.screen.blit(self.tileSelected, tilePos)
+                    if (tile.action == None):
+                        self.screen.blit(self.tileSelected, tilePos)
                 elif tile.worker == None and tile.action == None:
                     if (self.action != None):
                         if (self.action == "worker"):
@@ -256,11 +283,18 @@ class Game:
     def onMouseUp(self, button, mousePos):
         if (button == pg.BUTTON_LEFT):
 
-            if (self.ui.pressedButton != None):
-                if (self.ui.pressedButton.action == "replay"):
+            if (self.ui.pressedButton != None):                
+                if self.ui.pressedButton.action == "play":
+                    self.intro = False
+                    for _button in self.ui.buttons:
+                        _button.visible = True
+                    self.ui.playButton.visible = False
+                    self.ui.replayButton.visible = False
+                    self.ui.showCoins = True
+                elif (self.ui.pressedButton.action == "replay"):
                     self.showGameover(False)                    
                     self.updateCoins(config.coins - self.coins)
-                    self.reset()                    
+                    self.reset()
                     for _button in self.ui.buttons:
                         _button.selected = False
                 else:
@@ -328,7 +362,11 @@ class Game:
                         self.rawTiles += 1
                         self.stoneTiles -= 1
                         self.queueAction(area, local, tile, index, "pick", config.pickCost)                                           
+                    else:
+                        print(f"ERROR: unknown tile state {tile.state}")
                     self.printTileCounts()
+                else:
+                    print("breakpoint")
 
             # readyToHarvest = tile.state == config.readyTile
             # if (self.action != None and self.actionAllowed) or readyToHarvest:
@@ -359,20 +397,24 @@ class Game:
             #             self.canAfford = True
 
     def queueAction(self, area, localPos, tile, tileIndex, action, cost):
-        closestWorker = area.getClosestWorker(localPos)
-        closestWorker.queueAction(action, tileIndex)
         tile.action = action
-        # self.lastChangedTile = tileIndex
+        size = area.wipTiles.size
         area.wipTiles.append(tileIndex)
+        if (area.wipTiles.size != size + 1):
+            print("invalid wip tile size")
+        closestWorker = area.getClosestWorker(localPos)
+        closestWorker.queueAction(action, tileIndex)        
+        # self.lastChangedTile = tileIndex        
         self.updateCoins(-cost)
         self.updateAffordability(tile)
 
     def printTileCounts(self):
-        print("Raw: " + str(self.rawTiles))
-        print("Ploughed: " + str(self.ploughedTiles))
-        print("Planted: " + str(self.plantedTiles))
-        print("Fire: " + str(self.fireTiles))
-        print("Stone: " + str(self.stoneTiles))
+        pass
+        # print("Raw: " + str(self.rawTiles))
+        # print("Ploughed: " + str(self.ploughedTiles))
+        # print("Planted: " + str(self.plantedTiles))
+        # print("Fire: " + str(self.fireTiles))
+        # print("Stone: " + str(self.stoneTiles))
 
     def tryUpdateButton(self, button, action, cost):
         updated = False
