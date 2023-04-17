@@ -6,6 +6,7 @@ import utils
 import character
 import linkedlist
 import math
+import singletons
 
 tileSprites = [
     pg.image.load('images/tile-grass.png'), # raw
@@ -43,6 +44,7 @@ class Area:
         self.wipTiles = linkedlist.LinkedList()
 
     def update(self, dt):
+        game = singletons._game
         for worker in self.workers:
             worker.update(dt)
 
@@ -50,20 +52,23 @@ class Area:
         plantedTile = self.plantedTiles.head
         while plantedTile is not None:
             index = plantedTile.data
-            tile = self.tiles[index]            
-            if (tile.state == config.readyTile and tile.action == None):
-                tile.time += dt
-                if (tile.time >= config.growDuration):
-                    tile.time = 0
-                    tile.state = config.fireTile
-                    self.fireTiles.append(index)
-            elif tile.state < config.readyTile:
-                tile.time += dt
-                if (tile.time >= config.growDuration):
-                    tile.time = 0
-                    newState = tile.state + 1
-                    tile.state = newState                    
-                    self.redrawTiles(index)            
+            tile = self.tiles[index]          
+            if tile.action == None:
+                if (tile.state == config.readyTile):
+                    tile.time += dt
+                    if (tile.time >= config.growDuration):
+                        tile.time = 0
+                        tile.state = config.fireTile
+                        self.fireTiles.append(index)
+                        game.plantedTiles -= 1
+                        game.fireTiles += 1
+                elif tile.state < config.readyTile:
+                    tile.time += dt
+                    if (tile.time >= config.growDuration):
+                        tile.time = 0
+                        newState = tile.state + 1
+                        tile.state = newState                    
+                        self.redrawTiles(index)            
             plantedTile = plantedTile.next
 
     def draw(self, screen, cameraPos):

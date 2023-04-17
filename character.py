@@ -52,7 +52,7 @@ class Character:
                 area.redrawTiles(self.actionTile)                
             elif (self.action == 'plant'):
                 tile.state = config.plantedTile
-                area.redrawTiles(self.actionTile)             
+                area.redrawTiles(self.actionTile)
                 area.plantedTiles.append(self.actionTile)
             elif (self.action == 'water'):
                 if tile.state == config.fireTile:
@@ -64,6 +64,8 @@ class Character:
                     tile.time = config.growDuration
             elif (self.action == 'harvest'):
                 tile.state = config.stoneTile
+                game.stoneTiles += 1
+                game.readyTiles -= 1
                 game.updateCoins(config.harvestGain)
                 area.redrawTiles(self.actionTile)
                 area.plantedTiles.delete(self.actionTile)

@@ -35,18 +35,20 @@ class Game:
         self.replay = pg.image.load('images/ui/replay.png')
         gameOverY = (config.screenSize[1] - self.gameover.get_height()) / 2
         replayPos = ((config.screenSize[0] - self.replay.get_width()) / 2, gameOverY + self.gameover.get_height() + config.uiGap)
-        replayButton = button.Button(self.replay, replayPos, "replay")
+        replayButton = button.Button(self.replay, replayPos, "replay", False)
         self.ui.buttons.append(replayButton)
         self.ui.replayButton = replayButton
         
         self.action = None
-        self.selectorInRange = False
         self.coins = config.coins
+        self.reset()
+
+    def reset(self):
+        self.action = None
+        self.selectorInRange = False
         self.lastChangedTile = None
         self.canAfford = True
-        # self.readyToHarvestTiles = linkedlist.LinkedList()
-        self.updateCoins(0)
-
+        
         # initialize areas
         maxAreasPerRow = config.maxAreasPerRow
         self.startingAreaPos = (math.floor(maxAreasPerRow / 2), math.floor(maxAreasPerRow / 2))
@@ -57,7 +59,14 @@ class Game:
                 row.append(None)
             self.areas.append([])
         self.activeAreas = []
-        
+
+        self.rawTiles = 0
+        self.ploughedTiles = 0
+        self.plantedTiles = 0
+        self.readyTiles = 0
+        self.stoneTiles = 0
+        self.fireTiles = 0
+
         # first area
         areaPos = utils.areaToScreen(self.startingAreaPos)
         self.areaBounds = ((areaPos[0], areaPos[0] + config.mapSizePixels[0]), (areaPos[1], areaPos[1] + config.mapSizePixels[1]))
@@ -68,15 +77,13 @@ class Game:
         firstArea.redrawTiles(workerIndex)
 
         # center area in view
-        self.cameraPos = (areaPos[0] - (config.screenSize[0] - config.mapSizePixels[0]) // 2, areaPos[1] - (config.screenSize[1] - config.mapSizePixels[1]) // 2)
-
-        self.showGameover(True)
+        self.cameraPos = (areaPos[0] - (config.screenSize[0] - config.mapSizePixels[0]) // 2, areaPos[1] - (config.screenSize[1] - config.mapSizePixels[1]) // 2)        
 
     def addArea(self, pos):
         area = Area.Area(pos)
         self.areas[pos[1]][pos[0]] = area
         self.activeAreas.append(area)
-
+        self.rawTiles += config.tileCount
         # first worker
         # area.addWorker(config.firstWorkerPos)
         # workerIndex = utils.localToIndex(config.firstWorkerPos)
@@ -238,7 +245,11 @@ class Game:
 
             if (self.ui.pressedButton != None):
                 if (self.ui.pressedButton.action == "replay"):
-                    self.showGameover(False)
+                    self.showGameover(False)                    
+                    self.updateCoins(config.coins - self.coins)
+                    self.reset()                    
+                    for _button in self.ui.buttons:
+                        _button.selected = False
                 else:
                     if (self.action == self.ui.pressedButton.action):
                         self.action = None
@@ -283,15 +294,27 @@ class Game:
                     self.action = None
                     self.ui.workerButton.selected = False
                 elif tile.state == config.rawTile:
-                    self.queueAction(area, local, tile, index, "plough", config.ploughCost)
+                    self.rawTiles -= 1
+                    self.ploughedTiles += 1
+                    self.queueAction(area, local, tile, index, "plough", config.ploughCost)                    
                 elif tile.state == config.ploughedTile:
-                    self.queueAction(area, local, tile, index, "plant", config.plantCost)
+                    self.ploughedTiles -= 1
+                    self.plantedTiles += 1
+                    self.queueAction(area, local, tile, index, "plant", config.plantCost)                    
                 elif (tile.state >= config.plantedTile and tile.state < config.readyTile) or tile.state == config.fireTile:
-                    self.queueAction(area, local, tile, index, "water", config.waterCost)
+                    if tile.state == config.fireTile:
+                        self.fireTiles -= 1
+                        self.stoneTiles += 1
+                    self.queueAction(area, local, tile, index, "water", config.waterCost)                    
                 elif tile.state == config.readyTile:
-                    self.queueAction(area, local, tile, index, "harvest", 0)
+                    self.plantedTiles -= 1
+                    self.readyTiles += 1
+                    self.queueAction(area, local, tile, index, "harvest", 0)                    
                 elif tile.state == config.stoneTile:
-                    self.queueAction(area, local, tile, index, "pick", config.pickCost)
+                    self.rawTiles += 1
+                    self.stoneTiles -= 1
+                    self.queueAction(area, local, tile, index, "pick", config.pickCost)                    
+                self.printTileCounts()
 
             # readyToHarvest = tile.state == config.readyTile
             # if (self.action != None and self.actionAllowed) or readyToHarvest:
@@ -330,6 +353,13 @@ class Game:
         self.updateCoins(-cost)
         self.updateAffordability(tile)
 
+    def printTileCounts(self):
+        print("Raw: " + str(self.rawTiles))
+        print("Ploughed: " + str(self.ploughedTiles))
+        print("Planted: " + str(self.plantedTiles))
+        print("Fire: " + str(self.fireTiles))
+        print("Stone: " + str(self.stoneTiles))
+
     def tryUpdateButton(self, button, action, cost):
         updated = False
         if (button.action == action):
@@ -367,6 +397,18 @@ class Game:
             #         if not self.tryUpdateButton(button, 'water', config.waterCost):
             #             if not self.tryUpdateButton(button, 'pick', config.pickCost):
             #                 self.tryUpdateButton(button, 'worker', config.workerCost)
+
+        # check game over
+        isGameover = False
+        if (self.coins < config.plantCost):
+            isGameover = self.plantedTiles == 0 and self.readyTiles == 0
+        else:
+            if self.rawTiles == 0:
+                isGameover = self.plantedTiles == 0 and self.readyTiles == 0
+            else:
+                pass
+        if (isGameover):
+            self.showGameover(True)
 
     def showGameover(self, show):
         self.gameoverVisible = show
