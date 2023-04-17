@@ -28,20 +28,26 @@ class UI:
         self.buttons = []
 
         iconSize = 100
-        width = iconSize * len(actions) + config.uiGap * (len(actions) - 1)
+        # width = iconSize * len(actions) + config.uiGap * (len(actions) - 1)
         yPos = config.screenSize[1] - iconSize - config.uiPadding
         xPos = config.uiPadding #(config.screenSize[0] - width) // 2
         for action in actions:
             image = pg.image.load('images/ui/icon-' + action + '.png')
             self.buttons.append(button.Button(image, (xPos, yPos), action))
-            xPos += image.get_width() + config.uiGap
+            xPos += image.get_width() + config.uiGap 
+
+        self.workerButton = self.buttons[0]
+        self.expandButton = self.buttons[1]
+        self.replayButton = None
 
     def update(self):
         (leftPressed, _, _) = pg.mouse.get_pressed()
         mousPos = pg.mouse.get_pos()
         hoveredButton = None
         for button in self.buttons:
-            if (button.disabled):
+            if (not button.visible):
+                pass
+            elif (button.disabled):
                 button.hovered = False
                 button.pressed = False
             elif (button.rect.collidepoint(mousPos)):

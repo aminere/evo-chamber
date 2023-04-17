@@ -10,6 +10,7 @@ import ui
 import linkedlist
 import tile as Tile
 import area as Area
+import button
 
 class Game:
     def __init__(self):
@@ -17,20 +18,28 @@ class Game:
         self.clock = pg.time.Clock()
         self.dt = 0.0        
         self.selected = -1, -1
-
+        self.ui = ui.UI()
         self.tileMask = pg.image.load('images/tile-mask.png')
         self.tileSelected = pg.image.load('images/tile-selected.png')
         self.areaSelector = pg.image.load('images/area-selector.png')
         # self.areaSelectorRed = pg.image.load('images/area-selector-red.png')
         # self.tileSelectedRed = pg.image.load('images/tile-selected-red.png')
         self.tileNoCoins = pg.image.load('images/tile-no-coins.png')
-        # self.tileSelectedRed.set_alpha(128)
-        # self.harvestIndicator = pg.image.load('images/ui/harvest-indicator.png')
 
-        self.ui = ui.UI()
+        # gameover screen
+        self.gameoverVisible = False
+        self.gameover = pg.image.load('images/ui/gameover.png')
+        self.backdrop = pg.surface.Surface(config.screenSize)
+        self.backdrop.set_alpha(128)
+        self.backdrop.fill((0, 0, 0))
+        self.replay = pg.image.load('images/ui/replay.png')
+        gameOverY = (config.screenSize[1] - self.gameover.get_height()) / 2
+        replayPos = ((config.screenSize[0] - self.replay.get_width()) / 2, gameOverY + self.gameover.get_height() + config.uiGap)
+        replayButton = button.Button(self.replay, replayPos, "replay")
+        self.ui.buttons.append(replayButton)
+        self.ui.replayButton = replayButton
+        
         self.action = None
-        # self.ui.buttons[0].selected = True
-        # self.actionAllowed = False
         self.selectorInRange = False
         self.coins = config.coins
         self.lastChangedTile = None
@@ -60,6 +69,8 @@ class Game:
 
         # center area in view
         self.cameraPos = (areaPos[0] - (config.screenSize[0] - config.mapSizePixels[0]) // 2, areaPos[1] - (config.screenSize[1] - config.mapSizePixels[1]) // 2)
+
+        self.showGameover(True)
 
     def addArea(self, pos):
         area = Area.Area(pos)
@@ -127,28 +138,33 @@ class Game:
                 if (area != None):
                     area.draw(self.screen, self.cameraPos)
 
-        sx, sy = utils.worldToScreen(self.selected)
-        areaPos = areaX, areaY = utils.worldToArea(self.selected)
-        if (self.selectorInRange):
-            localPos = utils.worldToLocal((areaX, areaY), self.selected)
-            index = utils.localToIndex(localPos)
-            area = self.areas[areaY][areaX]
-            tile = area.tiles[index]
-            tilePos = (sx - self.cameraPos[0], sy - self.cameraPos[1])
-            if (tile.state == config.readyTile):
-                self.screen.blit(self.tileSelected, tilePos)
-            elif (index != self.lastChangedTile):
-                if (tile.worker == None and tile.action == None):
-                    if (self.canAfford):                    
-                        self.screen.blit(self.tileSelected, tilePos)
-                    else:
-                        self.screen.blit(self.tileNoCoins, tilePos)
-                    # else:
-                        # self.screen.blit(self.tileSelectedRed, tilePos)
+        if (self.gameoverVisible):
+            self.screen.blit(self.backdrop, (0, 0))
+            gx, gy = (config.screenSize[0] - self.gameover.get_width()) / 2, (config.screenSize[1] - self.gameover.get_height()) / 2
+            self.screen.blit(self.gameover , (gx, gy))    
         else:
-            if (self.action == "expand"):
-                sx, sy = utils.areaToScreen(areaPos)
-                self.screen.blit(self.areaSelector, (sx - self.cameraPos[0], sy - self.cameraPos[1]))
+            sx, sy = utils.worldToScreen(self.selected)
+            areaPos = areaX, areaY = utils.worldToArea(self.selected)
+            if (self.selectorInRange):
+                localPos = utils.worldToLocal((areaX, areaY), self.selected)
+                index = utils.localToIndex(localPos)
+                area = self.areas[areaY][areaX]
+                tile = area.tiles[index]
+                tilePos = (sx - self.cameraPos[0], sy - self.cameraPos[1])
+                if (tile.state == config.readyTile):
+                    self.screen.blit(self.tileSelected, tilePos)
+                elif (index != self.lastChangedTile):
+                    if (tile.worker == None and tile.action == None):
+                        if (self.canAfford):                    
+                            self.screen.blit(self.tileSelected, tilePos)
+                        else:
+                            self.screen.blit(self.tileNoCoins, tilePos)
+                        # else:
+                            # self.screen.blit(self.tileSelectedRed, tilePos)
+            else:
+                if (self.action == "expand"):
+                    sx, sy = utils.areaToScreen(areaPos)
+                    self.screen.blit(self.areaSelector, (sx - self.cameraPos[0], sy - self.cameraPos[1]))
 
         # draw harvest indicators
         # tile = self.readyToHarvestTiles.head
@@ -221,15 +237,21 @@ class Game:
         if (button == pg.BUTTON_LEFT):
 
             if (self.ui.pressedButton != None):
-                if (self.action == self.ui.pressedButton.action):
-                    self.action = None
-                else: 
-                    self.action = self.ui.pressedButton.action
+                if (self.ui.pressedButton.action == "replay"):
+                    self.showGameover(False)
+                else:
+                    if (self.action == self.ui.pressedButton.action):
+                        self.action = None
+                    else: 
+                        self.action = self.ui.pressedButton.action                    
+                    for _button in self.ui.buttons:
+                        _button.selected = _button.action == self.action
                 self.ui.pressedButton = None
-                for button in self.ui.buttons:
-                    button.selected = button.action == self.action
                 return
             
+            if (self.gameoverVisible):
+                return
+
             if (self.ui.hoveredButton != None):
                 return
             
@@ -243,6 +265,8 @@ class Game:
                         if (area == None):
                             self.addArea((areaX, areaY))
                             self.updateCoins(-config.expandCost)  
+                            self.action = None
+                            self.ui.expandButton.selected = False                          
                 return
 
             areaX, areaY = utils.worldToArea(self.selected)
@@ -255,7 +279,9 @@ class Game:
                     area.addWorker(local)
                     area.redrawTiles(index)
                     self.updateCoins(-config.workerCost)
-                    self.updateAffordability(tile)
+                    self.updateAffordability(tile)                    
+                    self.action = None
+                    self.ui.workerButton.selected = False
                 elif tile.state == config.rawTile:
                     self.queueAction(area, local, tile, index, "plough", config.ploughCost)
                 elif tile.state == config.ploughedTile:
@@ -341,6 +367,13 @@ class Game:
             #         if not self.tryUpdateButton(button, 'water', config.waterCost):
             #             if not self.tryUpdateButton(button, 'pick', config.pickCost):
             #                 self.tryUpdateButton(button, 'worker', config.workerCost)
+
+    def showGameover(self, show):
+        self.gameoverVisible = show
+        uiVisible = not show
+        self.ui.workerButton.visible = uiVisible
+        self.ui.expandButton.visible = uiVisible
+        self.ui.replayButton.visible = show
     
     # def canAfford(self, action):
     #     if (action == 'plough'):

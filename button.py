@@ -4,7 +4,7 @@ import singletons
 from enum import Enum
 
 class Button:
-    def __init__(self, image, position, action):
+    def __init__(self, image, position, action, visible = True):
         self.image = image        
         self.position = position
         self.action = action
@@ -13,8 +13,12 @@ class Button:
         self.selected = False
         self.disabled = False
         self.rect = pg.Rect(position, image.get_size())
+        self.visible = visible
 
     def draw(self, screen):
+
+        if (not self.visible):
+            return
 
         yOffset = 0
         alpha = 255
