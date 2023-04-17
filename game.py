@@ -20,7 +20,8 @@ class Game:
 
         self.tileMask = pg.image.load('images/tile-mask.png')
         self.tileSelected = pg.image.load('images/tile-selected.png')
-        
+        self.areaSelector = pg.image.load('images/area-selector.png')
+        # self.areaSelectorRed = pg.image.load('images/area-selector-red.png')
         # self.tileSelectedRed = pg.image.load('images/tile-selected-red.png')
         self.tileNoCoins = pg.image.load('images/tile-no-coins.png')
         # self.tileSelectedRed.set_alpha(128)
@@ -126,9 +127,9 @@ class Game:
                 if (area != None):
                     area.draw(self.screen, self.cameraPos)
 
-        if (self.selectorInRange and self.ui.hoveredButton == None):
-            sx, sy = utils.worldToScreen(self.selected)
-            areaX, areaY = utils.worldToArea(self.selected)
+        sx, sy = utils.worldToScreen(self.selected)
+        areaPos = areaX, areaY = utils.worldToArea(self.selected)
+        if (self.selectorInRange):
             localPos = utils.worldToLocal((areaX, areaY), self.selected)
             index = utils.localToIndex(localPos)
             area = self.areas[areaY][areaX]
@@ -144,10 +145,10 @@ class Game:
                         self.screen.blit(self.tileNoCoins, tilePos)
                     # else:
                         # self.screen.blit(self.tileSelectedRed, tilePos)
-        # else:
-        #     sx, sy = utils.worldToScreen(self.selected)
-        #     tilePos = (sx - self.cameraPos[0], sy - self.cameraPos[1])
-        #     self.screen.blit(self.tileSelected, tilePos)        
+        else:
+            if (self.action == "expand"):
+                sx, sy = utils.areaToScreen(areaPos)
+                self.screen.blit(self.areaSelector, (sx - self.cameraPos[0], sy - self.cameraPos[1]))
 
         # draw harvest indicators
         # tile = self.readyToHarvestTiles.head
