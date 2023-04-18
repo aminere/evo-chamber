@@ -54,7 +54,7 @@ class Character:
                 # if (area.wipTiles.size != size - 1):
                 #     print("invalid wip tile size")
         elif self.state == State.WORKING: 
-            if self.workingTime >= 0: #config.workDuration:
+            if self.workingTime >= config.workDuration:
                 tile = area.tiles[self.actionTile]
                 if (self.action == 'plough'):
                     tile.state = config.ploughedTile
@@ -64,7 +64,7 @@ class Character:
                     tile.state = config.plantedTile
                     area.redrawTiles(self.actionTile)
                     area.plantedTiles.append(self.actionTile)
-                    game.workCompleted.play()           
+                    game.workCompleted.play()
                 elif (self.action == 'water'):
                     if tile.state == config.fireTile:
                         tile.state = config.stoneTile
@@ -74,8 +74,11 @@ class Character:
                     else:
                         tile.time = config.growDuration
                     game.workCompleted.play()
-                elif (self.action == 'harvest'):                    
+                elif (self.action == 'harvest'):
                     tile.state = config.stoneTile
+                    if not tile.costAnimActive:
+                        tile.startCostAnim(config.harvestGain)
+                        area.animatedTiles.append(self.actionTile)
                     game.updateCoins(config.harvestGain)
                     area.redrawTiles(self.actionTile)
                     area.plantedTiles.delete(self.actionTile)
@@ -137,11 +140,10 @@ class Character:
 
         # show salary indicator
         if (self.salaryAnimActive):
-            salaryOffsetY = 30
             factor = self.salaryAnimTime / config.costAnimDuration
             positionY = utils.lerp_InOutCubic(0, -config.costAnimYLength, factor)
             alpha = utils.lerp_InOutCubic(255, 0, factor)
-            rc = game.ui.salaryText.get_rect(center=(characterPos[0] + self.sprite.get_width() / 2, characterPos[1] - salaryOffsetY + positionY))        
+            rc = game.ui.salaryText.get_rect(center=(characterPos[0] + self.sprite.get_width() / 2, characterPos[1] - config.costOffsetY + positionY))        
             game.ui.salaryText.set_alpha(int(alpha))
             surface.blit(game.ui.salaryText, rc)
 

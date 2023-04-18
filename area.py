@@ -41,7 +41,8 @@ class Area:
         self.workers = []
         self.plantedTiles = linkedlist.LinkedList()
         self.fireTiles = linkedlist.LinkedList()
-        self.wipTiles = linkedlist.LinkedList()        
+        self.wipTiles = linkedlist.LinkedList()
+        self.animatedTiles = []
 
     def update(self, dt, paySalary):
         game = singletons._game
@@ -80,7 +81,19 @@ class Area:
                             game.readyTiles += 1
             # plantedTile = plantedTile.next
 
+        tilesToRemove = []
+        for index in self.animatedTiles:
+            tile = self.tiles[index]
+            if (tile.costAnimActive):
+                tile.costAnimTime += game.dt
+                if (tile.costAnimTime > config.costAnimDuration):                
+                    tile.costAnimActive = False
+                    tilesToRemove.append(index)
+        for index in tilesToRemove:
+            self.animatedTiles.remove(index)
+
     def draw(self, screen, cameraPos):
+        game = singletons._game
         sx, sy = utils.areaToScreen(self.position)
         screen.blit(self.surface, (sx - cameraPos[0], sy - cameraPos[1]))
 
@@ -92,8 +105,9 @@ class Area:
             index = wipTile#.data
             pos = utils.indexToLocal(index)            
             sx, sy = utils.worldToScreen(pos)
-            screen.blit(tileWip, (sx + ax - cameraPos[0], sy + ay - cameraPos[1]))
-            # wipTile = wipTile.next
+            tilePos = (sx + ax - cameraPos[0], sy + ay - cameraPos[1])
+            screen.blit(tileWip, tilePos)
+            # wipTile = wipTile.next 
 
         # todo draw selector if any
 
@@ -111,6 +125,19 @@ class Area:
 
         for worker in self.workers:
             worker.draw(screen, (ax, ay))
+
+        for index in self.animatedTiles:
+            tile = self.tiles[index]
+            if (tile.costAnimActive):
+                factor = tile.costAnimTime / config.costAnimDuration
+                positionY = utils.lerp_InOutCubic(0, -config.costAnimYLength, factor)
+                alpha = utils.lerp_InOutCubic(255, 0, factor)
+                pos = utils.indexToLocal(index)            
+                sx, sy = utils.worldToScreen(pos)
+                tilePos = (sx + ax - cameraPos[0], sy + ay - cameraPos[1])
+                rc = tile.costText.get_rect(center=(tilePos[0] + config.tileSize[0] / 2, tilePos[1] - config.costOffsetY + positionY))
+                tile.costText.set_alpha(int(alpha))
+                screen.blit(tile.costText, rc)
 
     def redrawTiles(self, index):
         y = math.floor(index / config.mapSize[0])

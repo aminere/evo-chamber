@@ -20,6 +20,7 @@ uiGap = 20
 
 costAnimDuration = 3
 costAnimYLength = 80
+costOffsetY = 30
 
 rawTile = 0
 ploughedTile = rawTile + 1
@@ -39,8 +40,8 @@ harvestGain = 20
 growDuration = 5
 harvestDuration = 2
 workerSpeed = 0.65
-workDuration = 2
+workDuration = .6
 salary = 1
-salaryFrequency = 2
+salaryFrequency = 5
 
 firstWorkerPos = (0, mapSize[1] // 2 - 1)

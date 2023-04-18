@@ -451,7 +451,10 @@ class Game:
             #             self.canAfford = True
 
     def queueAction(self, area, localPos, tile, tileIndex, action, cost):
-        tile.action = action
+        tile.action = action        
+        if not tile.costAnimActive:
+            tile.startCostAnim(-cost)
+            area.animatedTiles.append(tileIndex)
         # size = area.wipTiles.size
         area.wipTiles.append(tileIndex)
         # if (area.wipTiles.size != size + 1):
