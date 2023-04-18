@@ -44,6 +44,14 @@ class Area:
         self.wipTiles = linkedlist.LinkedList()
         self.animatedTiles = []
 
+        self.costAnim = False
+        self.costAnimTime = 0
+        self.costAnimText = None
+
+    def startCostAnim(self):
+        self.costAnim = True
+        self.costAnimTime = 0
+
     def update(self, dt, paySalary):
         game = singletons._game
         for worker in self.workers:
@@ -92,8 +100,13 @@ class Area:
         for index in tilesToRemove:
             self.animatedTiles.remove(index)
 
+        # cost anim
+        if (self.costAnim):
+            self.costAnimTime += game.dt
+            if (self.costAnimTime > config.costAnimDuration):                
+                self.costAnim = False
+
     def draw(self, screen, cameraPos):
-        game = singletons._game
         sx, sy = utils.areaToScreen(self.position)
         screen.blit(self.surface, (sx - cameraPos[0], sy - cameraPos[1]))
 
@@ -133,11 +146,24 @@ class Area:
                 positionY = utils.lerp_InOutCubic(0, -config.costAnimYLength, factor)
                 alpha = utils.lerp_InOutCubic(255, 0, factor)
                 pos = utils.indexToLocal(index)            
-                sx, sy = utils.worldToScreen(pos)
-                tilePos = (sx + ax - cameraPos[0], sy + ay - cameraPos[1])
+                tx, ty = utils.worldToScreen(pos)
+                tilePos = (tx + ax - cameraPos[0], ty + ay - cameraPos[1])
                 rc = tile.costText.get_rect(center=(tilePos[0] + config.tileSize[0] / 2, tilePos[1] - config.costOffsetY + positionY))
                 tile.costText.set_alpha(int(alpha))
                 screen.blit(tile.costText, rc)
+
+        # expand cost anim
+        game = singletons._game
+        if (self.costAnim):
+            if (self.costAnimText == None):
+                self.costAnimText = game.ui.font.render(f"{-config.expandCost}", False, (255, 0, 0))
+            factor = self.costAnimTime / config.costAnimDuration
+            positionY = utils.lerp_InOutCubic(0, -config.costAnimYLength, factor)
+            alpha = utils.lerp_InOutCubic(255, 0, factor)            
+            animPos = (sx + config.mapSizePixels[0] / 2 - cameraPos[0], sy + config.mapSizePixels[1] / 2 - cameraPos[1])
+            rc = self.costAnimText.get_rect(center=(animPos[0], animPos[1] + positionY))
+            self.costAnimText.set_alpha(int(alpha))
+            screen.blit(self.costAnimText, rc)
 
     def redrawTiles(self, index):
         y = math.floor(index / config.mapSize[0])

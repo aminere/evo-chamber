@@ -129,7 +129,7 @@ class Game:
         area = Area.Area(pos)
         self.areas[pos[1]][pos[0]] = area
         self.activeAreas.append(area)
-        self.rawTiles += config.tileCount
+        self.rawTiles += config.tileCount        
         # first worker
         # area.addWorker(config.firstWorkerPos)
         # workerIndex = utils.localToIndex(config.firstWorkerPos)
@@ -367,11 +367,12 @@ class Game:
                     else:
                         area = self.areas[areaY][areaX]
                         if (area == None):
-                            self.addArea((areaX, areaY))
+                            newArea = self.addArea((areaX, areaY))
                             self.updateCoins(-config.expandCost)  
                             self.action = None
                             self.ui.expandButton.selected = False
-                            self.expandSound.play()                          
+                            self.expandSound.play()
+                            newArea.startCostAnim()
                 return
 
             areaX, areaY = utils.worldToArea(self.selected)
@@ -389,6 +390,9 @@ class Game:
                         self.action = None
                         self.ui.workerButton.selected = False
                         self.tileSound.play()
+                        tile.startCostAnim(-config.workerCost)
+                        area.animatedTiles.append(index)                            
+                        
                 elif self.canAfford and len(area.workers) > 0:
                     if tile.state == config.rawTile:
                         self.rawTiles -= 1

@@ -18,7 +18,7 @@ uiBgColor = (17, 17, 17)
 uiPadding = 20
 uiGap = 20
 
-costAnimDuration = 3
+costAnimDuration = 2
 costAnimYLength = 80
 costOffsetY = 30
 
