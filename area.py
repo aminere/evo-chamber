@@ -43,10 +43,12 @@ class Area:
         self.fireTiles = linkedlist.LinkedList()
         self.wipTiles = linkedlist.LinkedList()        
 
-    def update(self, dt):
+    def update(self, dt, paySalary):
         game = singletons._game
         for worker in self.workers:
             worker.update(dt)
+            if paySalary:
+                worker.startSalaryAnim()
 
         # update tiles
         for plantedTile in self.plantedTiles.arr:

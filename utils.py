@@ -35,6 +35,14 @@ def indexToLocal(index):
 def lerp(a, b, t):
     return a + (b - a) * t
 
+def lerp_InOutCubic(a, b, t):
+    _t = t
+    if (t < 0.5):
+        _t = 4 * t * t * t
+    else:
+        _t = 1 - ((-2 * t + 2)**3) / 2
+    return a + (b - a) * _t
+
 def lerp2d_InOutCubic(a, b, t):
     # return a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
     _t = t

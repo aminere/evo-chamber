@@ -85,7 +85,8 @@ class Game:
         # self.lastChangedTile = None
         self.canAfford = True
         self.totalHarvests = 0
-        
+        self.salaryTimer = config.salaryFrequency
+
         # initialize areas
         maxAreasPerRow = config.maxAreasPerRow
         self.startingAreaPos = (math.floor(maxAreasPerRow / 2), math.floor(maxAreasPerRow / 2))
@@ -117,12 +118,12 @@ class Game:
         self.cameraPos = (areaPos[0] - (config.screenSize[0] - config.mapSizePixels[0]) // 2, areaPos[1] - (config.screenSize[1] - config.mapSizePixels[1]) // 2)        
 
         # todo testing
-        firstArea.addWorker((3, 0))
-        firstArea.addWorker((3, 3))
-        area = self.addArea((self.startingAreaPos[0] + 1, self.startingAreaPos[1]))        
-        area.addWorker((0, 0))
-        area.addWorker((3, 0))
-        area.addWorker((3, 3))
+        # firstArea.addWorker((3, 0))
+        # firstArea.addWorker((3, 3))
+        # area = self.addArea((self.startingAreaPos[0] + 1, self.startingAreaPos[1]))        
+        # area.addWorker((0, 0))
+        # area.addWorker((3, 0))
+        # area.addWorker((3, 3))
 
     def addArea(self, pos):
         area = Area.Area(pos)
@@ -151,9 +152,27 @@ class Game:
         return area
 
     def update(self):
+        
+        self.dt = self.clock.tick(config.fps) / 1000        
+        workerCount = 0
 
+        if (not self.gameoverVisible):
+            self.salaryTimer -= self.dt
+
+        paySalary = self.salaryTimer < 0
         for area in self.activeAreas:
-            area.update(self.dt)
+            area.update(self.dt, paySalary)
+            workerCount += len(area.workers)
+
+        if (not self.gameoverVisible):
+            if paySalary:
+                salaryToPay = workerCount * config.salary
+                if (self.coins < salaryToPay):
+                    self.showGameover(True)
+                else:
+                    self.updateCoins(-salaryToPay)
+                    self.fireSound.play()
+                self.salaryTimer = config.salaryFrequency
 
         # camera scroll
         mouseX, mouseY = pg.mouse.get_pos()
@@ -178,7 +197,6 @@ class Game:
                 self.cameraPos = (self.cameraPos[0], max(self.cameraPos[1], minY - yMargin))
 
         self.ui.update()        
-        self.dt = self.clock.tick(config.fps) / 1000
         pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}")        
 
     def draw(self):        

@@ -18,6 +18,9 @@ uiBgColor = (17, 17, 17)
 uiPadding = 20
 uiGap = 20
 
+costAnimDuration = 3
+costAnimYLength = 80
+
 rawTile = 0
 ploughedTile = rawTile + 1
 plantedTile = ploughedTile + 1
@@ -25,7 +28,7 @@ readyTile = plantedTile + 2
 fireTile = readyTile + 1
 stoneTile = fireTile + 1
 
-coins = 300
+coins = 30
 ploughCost = 1
 plantCost = 2
 waterCost = 5
@@ -35,7 +38,9 @@ expandCost = 20
 harvestGain = 20
 growDuration = 5
 harvestDuration = 2
-workerSpeed = 0.7
+workerSpeed = 0.65
 workDuration = 2
+salary = 1
+salaryFrequency = 2
 
 firstWorkerPos = (0, mapSize[1] // 2 - 1)

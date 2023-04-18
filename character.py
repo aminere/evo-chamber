@@ -38,6 +38,9 @@ class Character:
         self.workingTime = 0
         # self.moveQueue = None
 
+        self.salaryAnimTime = 0
+        self.salaryAnimActive = False
+
     def update(self, dt):
         game = singletons._game
         area = self.area
@@ -109,6 +112,12 @@ class Character:
                 self.actionQueue.deleteHead()
                 self.state = State.GOING_TO_WORK
 
+        # salary anim
+        if (self.salaryAnimActive):
+            self.salaryAnimTime += dt
+            if (self.salaryAnimTime > config.costAnimDuration):                
+                self.salaryAnimActive = False
+
     def draw(self, surface, areaPos):
 
         ax, ay = areaPos
@@ -119,14 +128,22 @@ class Character:
             sx, sy = utils.worldToScreen(self.position)
             screenPos = (sx + ax, sy + ay)
         
+        characterPos = (screenPos[0] - game.cameraPos[0] + self.xOffset, screenPos[1] - game.cameraPos[1] - self.yOffset)
         surface.blit(
             # self.sprites[self.orientation],
             self.sprite,
-            (
-                screenPos[0] - game.cameraPos[0] + self.xOffset,
-                screenPos[1] - game.cameraPos[1] - self.yOffset
-            )
+            characterPos
         )
+
+        # show salary indicator
+        if (self.salaryAnimActive):
+            salaryOffsetY = 30
+            factor = self.salaryAnimTime / config.costAnimDuration
+            positionY = utils.lerp_InOutCubic(0, -config.costAnimYLength, factor)
+            alpha = utils.lerp_InOutCubic(255, 0, factor)
+            rc = game.ui.salaryText.get_rect(center=(characterPos[0] + self.sprite.get_width() / 2, characterPos[1] - salaryOffsetY + positionY))        
+            game.ui.salaryText.set_alpha(int(alpha))
+            surface.blit(game.ui.salaryText, rc)
 
     def moveTo(self, tileIndex):
         # if (self.state == State.MOVING):
@@ -164,5 +181,6 @@ class Character:
             return True
         return False
 
-
-    
+    def startSalaryAnim(self):
+        self.salaryAnimActive = True
+        self.salaryAnimTime = 0

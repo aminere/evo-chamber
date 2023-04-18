@@ -16,6 +16,7 @@ class UI:
         self.pressedButton = None
         self.hoveredButton = None    
         self.showCoins = False 
+        self.salaryText = self.font.render(f"-{config.salary}", False, (255, 0, 0))
 
         actions = [
             # "plough",
@@ -40,7 +41,8 @@ class UI:
         self.workerButton = self.buttons[0]
         self.expandButton = self.buttons[1]
         self.replayButton = None
-        self.playButton = None        
+        self.playButton = None           
+
 
     def update(self):
         (leftPressed, _, _) = pg.mouse.get_pressed()
