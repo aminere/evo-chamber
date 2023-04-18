@@ -2,6 +2,8 @@
 
 2D isometric farming simulator
 
+Entry for the Devpost Pygame Hackaton 2023
+
 ## How to launch
 `python main.py`
 
