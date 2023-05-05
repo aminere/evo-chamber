@@ -14,5 +14,5 @@ Entry for the Devpost Pygame Hackaton 2023
 - The longer a tile is not harvested, the higher the likelihood it may catch fire
 - Click on the icons on the bottom left menu to either add a new worker or expand the farm
 
-![Thumbnail](thumbnail3.png?raw=true)
 ![Thumbnail](thumbnail1.png?raw=true)
+![Thumbnail](thumbnail3.png?raw=true)
